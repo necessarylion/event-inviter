@@ -105,14 +105,50 @@ class CardTemplateService {
   }
 
   /**
-   * Pull the page dimensions from a template's blank-page basePdf, rounded to
-   * whole millimetres. Empty when the base is an uploaded PDF data URI.
+   * Pull the page dimensions (whole millimetres) from a template's basePdf —
+   * either the blank-page spec `{ width, height }` or, for an uploaded PDF data
+   * URI, the first page of the PDF itself (matching what the designer shows).
+   * Empty only when neither can be read.
    */
-  dimensions(template: Template): { width?: number; height?: number } {
+  async dimensions(template: Template): Promise<{ width?: number; height?: number }> {
     const basePdf = template.basePdf as { width?: number; height?: number } | string
-    return typeof basePdf === 'object' && basePdf.width && basePdf.height
-      ? { width: Math.round(basePdf.width), height: Math.round(basePdf.height) }
-      : {}
+
+    if (typeof basePdf === 'object' && basePdf.width && basePdf.height) {
+      return { width: Math.round(basePdf.width), height: Math.round(basePdf.height) }
+    }
+
+    if (typeof basePdf === 'string' && basePdf.startsWith('data:')) {
+      const size = await this.pdfSizeMm(basePdf)
+      if (size) return size
+    }
+
+    return {}
+  }
+
+  // PDF page boxes are measured in points; basePdf sizes are in millimetres.
+  private readonly PT_TO_MM = 25.4 / 72
+
+  /**
+   * First-page size of a base64 PDF data URI, in whole millimetres (accounting
+   * for page rotation) — the server-side mirror of the designer's pdfSizeMm.
+   * Null if the PDF can't be read.
+   */
+  private async pdfSizeMm(dataUri: string): Promise<{ width: number; height: number } | null> {
+    try {
+      const base64 = dataUri.slice(dataUri.indexOf(',') + 1)
+      const bytes = Buffer.from(base64, 'base64')
+      const { PDFDocument } = (await import('@pdfme/pdf-lib')) as any
+      const doc = await PDFDocument.load(bytes)
+      const page = doc.getPage(0)
+      if (!page) return null
+      const { width, height } = page.getSize()
+      const rotated = (page.getRotation().angle / 90) % 2 !== 0
+      const w = rotated ? height : width
+      const h = rotated ? width : height
+      return { width: Math.round(w * this.PT_TO_MM), height: Math.round(h * this.PT_TO_MM) }
+    } catch {
+      return null
+    }
   }
 }
 

@@ -35,8 +35,18 @@ const props = withDefaults(
     saving?: boolean
     // Field names that must survive in-designer edits (rename/delete are undone).
     reservedFields?: string[]
+    // Base filename for the "Download" export (the .json is added automatically).
+    downloadName?: string
+    // When set, in-designer edits are debounce-saved (schema only) to this URL.
+    // Leave undefined to disable auto-save (e.g. an unsaved new template).
+    autosaveUrl?: string
   }>(),
-  { saving: false, reservedFields: () => ['guestName'] }
+  {
+    saving: false,
+    reservedFields: () => ['guestName'],
+    downloadName: 'template',
+    autosaveUrl: undefined,
+  }
 )
 
 const emit = defineEmits<{ save: [template: Template] }>()
@@ -47,6 +57,92 @@ let designer: Designer | null = null
 const { isDark, accent, sync } = useTheme()
 
 const plain = (t: any): any => JSON.parse(JSON.stringify(t))
+
+/**
+ * pdfme doesn't tolerate `null` schema properties that a freshly added, untouched
+ * field serializes with: a null `content` fails init validation ("expected string,
+ * received null"), and a null colour (`fontColor`, `backgroundColor`, …) crashes
+ * the property panel on selection (`getAlphaFromHex` slices null). Coerce `content`
+ * to an empty string and drop every other null key so pdfme falls back to its
+ * defaults. Returns a clean plain copy, so it doubles as the proxy-safe deep clone
+ * we hand the Designer. Applied on load and before every save.
+ */
+function sanitizeTemplate(t: any): any {
+  const out = plain(t)
+  if (Array.isArray(out.schemas)) {
+    for (const page of out.schemas) {
+      if (!Array.isArray(page)) continue
+      for (const schema of page) {
+        if (!schema || typeof schema !== 'object') continue
+        for (const key of Object.keys(schema)) {
+          if (schema[key] !== null) continue
+          if (key === 'content') schema[key] = ''
+          else delete schema[key]
+        }
+      }
+    }
+  }
+  return out
+}
+
+// --- Auto-save (schema only) -------------------------------------------------
+// When `autosaveUrl` is set, in-designer edits are debounced into a quiet
+// background PUT of the current template. The endpoints persist the schema only
+// (no preview re-render, no flash) and return 204, so this never disturbs the
+// page. The manual "Save design" button still drives the authoritative save.
+const AUTOSAVE_DEBOUNCE_MS = 1200
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+const autosaveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+// How long the "Saved" confirmation lingers before it fades back to idle.
+const SAVED_LINGER_MS = 2500
+let savedHideTimer: ReturnType<typeof setTimeout> | null = null
+
+// Echo the CSRF token the same way Inertia's axios does: read the (URL-encoded)
+// XSRF-TOKEN cookie and send it back in the X-XSRF-TOKEN header.
+function readXsrfToken(): string {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
+async function runAutosave() {
+  if (!props.autosaveUrl || !designer) return
+  const template = getTemplate()
+  if (!template) return
+  if (savedHideTimer) {
+    clearTimeout(savedHideTimer)
+    savedHideTimer = null
+  }
+  autosaveStatus.value = 'saving'
+  try {
+    const res = await fetch(props.autosaveUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': readXsrfToken() },
+      credentials: 'same-origin',
+      body: JSON.stringify({ template }),
+    })
+    if (!res.ok) {
+      autosaveStatus.value = 'error'
+      return
+    }
+    // Show "Saved" briefly, then quietly clear it.
+    autosaveStatus.value = 'saved'
+    savedHideTimer = setTimeout(() => {
+      if (autosaveStatus.value === 'saved') autosaveStatus.value = 'idle'
+      savedHideTimer = null
+    }, SAVED_LINGER_MS)
+  } catch {
+    autosaveStatus.value = 'error'
+  }
+}
+
+function scheduleAutosave() {
+  if (!props.autosaveUrl) return
+  if (autosaveTimer) clearTimeout(autosaveTimer)
+  autosaveTimer = setTimeout(() => {
+    autosaveTimer = null
+    void runAutosave()
+  }, AUTOSAVE_DEBOUNCE_MS)
+}
 
 /**
  * pdfme renders its UI with Ant Design, so we hand the Designer an antd token
@@ -284,7 +380,8 @@ onMounted(async () => {
   // `props.initialTemplate` is a Vue reactive proxy (Inertia props are reactive). pdfme's
   // Designer deep-clones it with `structuredClone`, which throws on proxies, so hand
   // it a plain JSON copy — the template is pure JSON data, so this is lossless.
-  const template = plain(props.initialTemplate) as Template
+  // sanitizeTemplate also repairs any null content a prior save may have stored.
+  const template = sanitizeTemplate(props.initialTemplate) as Template
   const font = await buildFonts()
   // Align the theme ref with the <html data-theme> the boot script set pre-paint.
   sync()
@@ -339,6 +436,7 @@ onMounted(async () => {
       if (restored.length) toast.info(`System field restored: ${uniq(restored)}`)
     }
     snapshot = plain(candidate)
+    scheduleAutosave()
   })
 })
 
@@ -348,6 +446,18 @@ watch([isDark, accent], () => {
 })
 
 onBeforeUnmount(() => {
+  // Flush a pending edit before tearing down so the last change isn't lost.
+  // The fetch outlives this component (the SPA document stays alive across
+  // Inertia navigation), so it completes even though we destroy the designer.
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer)
+    autosaveTimer = null
+    void runAutosave()
+  }
+  if (savedHideTimer) {
+    clearTimeout(savedHideTimer)
+    savedHideTimer = null
+  }
   designer?.destroy()
   designer = null
 })
@@ -361,12 +471,43 @@ function applyTemplate(tpl: Record<string, any>) {
 }
 
 function getTemplate(): Template | null {
-  return designer ? (designer.getTemplate() as Template) : null
+  return designer ? (sanitizeTemplate(designer.getTemplate()) as Template) : null
 }
 
 function save() {
   const template = getTemplate()
   if (template) emit('save', template)
+}
+
+/**
+ * Export the whole design to a JSON file the admin can re-import later. The
+ * pdfme template carries its `basePdf` inline — a blank-page spec or, for an
+ * uploaded PDF, a base64 data URI — so the single file is fully self-contained.
+ */
+function download() {
+  const template = getTemplate()
+  if (!template) return
+  const payload = {
+    format: 'event-inviter-template',
+    version: 1,
+    name: props.downloadName,
+    template,
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const slug =
+    props.downloadName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'template'
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${slug}.json`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 defineExpose({ applyTemplate, getTemplate })
@@ -385,6 +526,30 @@ defineExpose({ applyTemplate, getTemplate })
 
       <div class="flex items-center gap-2">
         <slot name="toolbar-extra" />
+
+        <!-- Quiet auto-save status (schema only); the manual save is authoritative.
+             "Saved" clears itself after a few seconds. -->
+        <span
+          v-if="autosaveUrl && autosaveStatus !== 'idle'"
+          class="flex items-center gap-1.5 px-1 text-xs font-medium"
+          :class="autosaveStatus === 'error' ? 'text-red-500' : 'text-ink-2'"
+        >
+          <i
+            class="text-[10px]"
+            :class="{
+              'pi pi-spin pi-spinner': autosaveStatus === 'saving',
+              'pi pi-check': autosaveStatus === 'saved',
+              'pi pi-exclamation-circle': autosaveStatus === 'error',
+            }"
+          />
+          {{
+            autosaveStatus === 'saving'
+              ? 'Saving…'
+              : autosaveStatus === 'saved'
+                ? 'Saved'
+                : 'Save failed'
+          }}
+        </span>
 
         <!-- Paper-size preset -->
         <div class="relative">
@@ -433,7 +598,16 @@ defineExpose({ applyTemplate, getTemplate })
           <input type="file" accept="application/pdf,.pdf" class="hidden" @change="onReplacePdf" />
         </label>
 
-        <UiButton class="h-9" :loading="saving" icon="pi-check" @click="save">Save design</UiButton>
+        <UiButton
+          class="h-9"
+          variant="secondary"
+          icon="pi-download"
+          title="Download template (.json)"
+          aria-label="Download template"
+          @click="download"
+        />
+
+        <UiButton class="h-9" :loading="saving" icon="pi-save" @click="save">Save design</UiButton>
       </div>
     </div>
 

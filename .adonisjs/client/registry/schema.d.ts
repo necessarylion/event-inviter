@@ -343,6 +343,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/card_controller').default['save']>>>
     }
   }
+  'cards.autosave': {
+    methods: ["PUT"]
+    pattern: '/events/:eventId/card/autosave'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { eventId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/card_controller').default['autosave']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/card_controller').default['autosave']>>>
+    }
+  }
   'cards.generate': {
     methods: ["GET","HEAD"]
     pattern: '/events/:eventId/guests/:guestId/card.pdf'
@@ -461,6 +473,18 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/template_preset').updateTemplatePresetValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['update']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin.templates.autosave': {
+    methods: ["PUT"]
+    pattern: '/admin/templates/:id/autosave'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['autosave']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['autosave']>>>
     }
   }
   'admin.templates.publish': {

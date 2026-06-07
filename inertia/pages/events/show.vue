@@ -230,7 +230,10 @@ const rsvpVariant = (s: string) =>
   <!-- guest list -->
   <h2 class="mb-3.5 mt-8 text-[22px] font-extrabold tracking-tight text-ink">Guest list</h2>
 
-  <div v-if="guests.length" class="overflow-x-auto rounded-card border border-line bg-surface">
+  <div
+    v-if="guests.length"
+    class="hidden overflow-x-auto rounded-card border border-line bg-surface md:block"
+  >
     <table class="w-full border-collapse text-left">
       <thead>
         <tr
@@ -283,7 +286,7 @@ const rsvpVariant = (s: string) =>
                 :disabled="downloadingId === guest.id"
                 @click="downloadCard(guest)"
               >
-                Card image
+                Invitation
               </UiButton>
               <UiButton
                 v-if="guest.email"
@@ -301,6 +304,69 @@ const rsvpVariant = (s: string) =>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- guest list (mobile cards) -->
+  <div v-if="guests.length" class="flex flex-col gap-3 md:hidden">
+    <div
+      v-for="guest in guests"
+      :key="guest.id"
+      class="rounded-card border border-line bg-surface p-4"
+    >
+      <div class="flex items-start gap-3">
+        <UiAvatar :name="guest.name" />
+        <div class="min-w-0 flex-1">
+          <p class="truncate font-semibold text-ink">{{ guest.name }}</p>
+          <p class="truncate text-sm text-ink">{{ guest.email || '—' }}</p>
+          <p v-if="guest.phone" class="truncate text-[13px] text-muted">{{ guest.phone }}</p>
+        </div>
+      </div>
+
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <UiBadge :variant="rsvpVariant(guest.rsvpStatus)">{{ guest.rsvpStatus }}</UiBadge>
+        <UiBadge v-if="guest.isCheckedIn" variant="success" icon="pi-check">Checked in</UiBadge>
+        <UiBadge v-else variant="muted">Not yet</UiBadge>
+      </div>
+
+      <div class="mt-3.5 grid grid-cols-2 gap-2 border-t border-line pt-3.5">
+        <UiButton
+          variant="secondary"
+          size="sm"
+          block
+          :icon="copiedId === guest.id ? 'pi-check' : 'pi-link'"
+          @click="copyLink(guest)"
+        >
+          {{ copiedId === guest.id ? 'Copied' : 'Copy link' }}
+        </UiButton>
+        <UiButton
+          variant="secondary"
+          size="sm"
+          block
+          :icon="downloadingId === guest.id ? 'pi-spinner pi-spin' : 'pi-image'"
+          :disabled="downloadingId === guest.id"
+          @click="downloadCard(guest)"
+        >
+          Invitation
+        </UiButton>
+        <UiButton
+          v-if="guest.email"
+          variant="secondary"
+          size="sm"
+          block
+          icon="pi-envelope"
+          @click="sendEmail(guest)"
+          >Email</UiButton
+        >
+        <UiButton
+          variant="danger-ghost"
+          size="sm"
+          block
+          icon="pi-trash"
+          @click="removeGuest(guest)"
+          >Remove</UiButton
+        >
+      </div>
+    </div>
   </div>
 
   <UiCard v-else>

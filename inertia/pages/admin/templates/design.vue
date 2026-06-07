@@ -2,7 +2,7 @@
 import { Head, router } from '@inertiajs/vue3'
 import { Link } from '@adonisjs/inertia/vue'
 import { toast } from 'vue-sonner'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Template } from '@pdfme/common'
 import CardDesigner from '~/components/card_designer.vue'
 import { UiSwitch } from '~/components/ui'
@@ -14,6 +14,12 @@ const props = defineProps<{ preset: Preset | null; template: Record<string, any>
 const name = ref(props.preset?.name ?? '')
 const isPublished = ref(props.preset?.isPublished ?? true)
 const saving = ref(false)
+
+// Auto-save (schema only) once the template exists — a brand-new template needs
+// one explicit save first to be named and created (which sets `preset`).
+const autosaveUrl = computed(() =>
+  props.preset ? `/admin/templates/${props.preset.id}/autosave` : undefined
+)
 
 function onSave(template: Template) {
   if (!name.value.trim()) {
@@ -46,7 +52,13 @@ function onSave(template: Template) {
 <template>
   <Head :title="preset ? 'Edit template' : 'New template'" />
 
-  <CardDesigner :initial-template="template" :saving="saving" @save="onSave">
+  <CardDesigner
+    :initial-template="template"
+    :saving="saving"
+    :autosave-url="autosaveUrl"
+    :download-name="name || 'template'"
+    @save="onSave"
+  >
     <template #toolbar-start>
       <Link
         href="/admin/templates"

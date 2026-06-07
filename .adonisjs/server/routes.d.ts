@@ -32,6 +32,7 @@ export type ScannedRoutes = {
     'checkins.verify': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'cards.design': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'cards.save': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
+    'cards.autosave': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'cards.generate': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'guestId': ParamValue} }
     'cards.email': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'guestId': ParamValue} }
     'email_settings.edit': { paramsTuple?: []; params?: {} }
@@ -42,6 +43,7 @@ export type ScannedRoutes = {
     'admin.templates.store': { paramsTuple?: []; params?: {} }
     'admin.templates.edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin.templates.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin.templates.autosave': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin.templates.publish': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin.templates.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
@@ -103,8 +105,10 @@ export type ScannedRoutes = {
     'events.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'guests.update': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'id': ParamValue} }
     'cards.save': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
+    'cards.autosave': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'email_settings.update': { paramsTuple?: []; params?: {} }
     'admin.templates.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin.templates.autosave': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin.templates.publish': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   DELETE: {

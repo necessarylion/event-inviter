@@ -46,7 +46,13 @@ function onSave(template: Template) {
 <template>
   <Head title="Card designer" />
 
-  <CardDesigner ref="designerRef" :initial-template="template" :saving="saving" @save="onSave">
+  <CardDesigner
+    ref="designerRef"
+    :initial-template="template"
+    :saving="saving"
+    :autosave-url="`/events/${event.id}/card/autosave`"
+    @save="onSave"
+  >
     <template #toolbar-start>
       <Link
         :href="`/events/${event.id}`"

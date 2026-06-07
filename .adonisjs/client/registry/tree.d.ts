@@ -47,6 +47,7 @@ export interface ApiDefinition {
   cards: {
     design: typeof routes['cards.design']
     save: typeof routes['cards.save']
+    autosave: typeof routes['cards.autosave']
     generate: typeof routes['cards.generate']
     email: typeof routes['cards.email']
   }
@@ -62,6 +63,7 @@ export interface ApiDefinition {
       store: typeof routes['admin.templates.store']
       edit: typeof routes['admin.templates.edit']
       update: typeof routes['admin.templates.update']
+      autosave: typeof routes['admin.templates.autosave']
       publish: typeof routes['admin.templates.publish']
       destroy: typeof routes['admin.templates.destroy']
     }

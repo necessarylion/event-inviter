@@ -47,7 +47,7 @@ export default class AdminTemplatesController {
       designJson: parsed.template,
       isPublished: payload.isPublished ?? true,
       previewImage: await this.renderPreview(parsed.template),
-      ...cardTemplateService.dimensions(parsed.template),
+      ...(await cardTemplateService.dimensions(parsed.template)),
     })
 
     // Stay in the designer (now editing the saved record) instead of bouncing to the list.
@@ -93,13 +93,37 @@ export default class AdminTemplatesController {
       designJson: parsed.template,
       isPublished: payload.isPublished ?? preset.isPublished,
       previewImage,
-      ...cardTemplateService.dimensions(parsed.template),
+      ...(await cardTemplateService.dimensions(parsed.template)),
     })
     await preset.save()
 
     // Stay in the designer after saving rather than returning to the list.
     session.flash('success', 'Template saved.')
     return response.redirect().back()
+  }
+
+  /**
+   * Quietly persist the working design (schema only) from the designer's debounced
+   * auto-save. Deliberately skips the expensive preview re-render, the name/publish
+   * fields and the QR-code guard — it's a background draft save of the layout, so
+   * the existing thumbnail is kept and `update` stays the authoritative save.
+   * Returns 204 so the fire-and-forget fetch doesn't trigger an Inertia reload.
+   */
+  async autosave({ params, request, response }: HttpContext) {
+    const preset = await TemplatePreset.find(params.id)
+    if (!preset) {
+      return response.notFound('Template not found')
+    }
+
+    const parsed = cardTemplateService.parseAndValidate(request.input('template'))
+    if (!parsed) {
+      return response.noContent()
+    }
+
+    preset.designJson = parsed.template
+    await preset.save()
+
+    return response.noContent()
   }
 
   /**

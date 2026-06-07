@@ -94,6 +94,7 @@ router
      */
     router.get('events/:eventId/card', [controllers.Card, 'design']).as('cards.design')
     router.put('events/:eventId/card', [controllers.Card, 'save']).as('cards.save')
+    router.put('events/:eventId/card/autosave', [controllers.Card, 'autosave']).as('cards.autosave')
     router
       .get('events/:eventId/guests/:guestId/card.pdf', [controllers.Card, 'generate'])
       .as('cards.generate')
@@ -126,6 +127,9 @@ router
       .get('templates/:id/edit', [controllers.AdminTemplates, 'edit'])
       .as('admin.templates.edit')
     router.put('templates/:id', [controllers.AdminTemplates, 'update']).as('admin.templates.update')
+    router
+      .put('templates/:id/autosave', [controllers.AdminTemplates, 'autosave'])
+      .as('admin.templates.autosave')
     router
       .put('templates/:id/publish', [controllers.AdminTemplates, 'togglePublish'])
       .as('admin.templates.publish')

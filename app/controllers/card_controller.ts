@@ -68,6 +68,31 @@ export default class CardController {
   }
 
   /**
+   * Quietly persist the working design (schema only) from the designer's debounced
+   * auto-save. Unlike `save` it skips the QR-code guard and any flash message —
+   * it's a background draft save, and the explicit `save` enforces the QR rule.
+   * Returns 204 so the fire-and-forget fetch doesn't trigger an Inertia reload.
+   */
+  async autosave({ params, request, auth, response }: HttpContext) {
+    const event = await this.findOwnedEvent(auth.user!.id, params.eventId)
+    if (!event) {
+      return response.notFound('Event not found')
+    }
+
+    const parsed = cardTemplateService.parseAndValidate(request.input('template'))
+    if (!parsed) {
+      return response.noContent()
+    }
+
+    await CardTemplate.updateOrCreate(
+      { eventId: event.id },
+      { eventId: event.id, name: 'Invitation card', designJson: parsed.template }
+    )
+
+    return response.noContent()
+  }
+
+  /**
    * Serve a guest's personalized card as a PDF. The browser rasterizes it to a
    * PNG for download (see use_card_image) — keeping the slow PDF→image step off
    * the server for the interactive path.

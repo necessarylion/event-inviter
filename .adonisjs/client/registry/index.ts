@@ -174,6 +174,12 @@ const routes = {
     tokens: [{"old":"/events/:eventId/card","type":0,"val":"events","end":""},{"old":"/events/:eventId/card","type":1,"val":"eventId","end":""},{"old":"/events/:eventId/card","type":0,"val":"card","end":""}],
     types: placeholder as Registry['cards.save']['types'],
   },
+  'cards.autosave': {
+    methods: ["PUT"],
+    pattern: '/events/:eventId/card/autosave',
+    tokens: [{"old":"/events/:eventId/card/autosave","type":0,"val":"events","end":""},{"old":"/events/:eventId/card/autosave","type":1,"val":"eventId","end":""},{"old":"/events/:eventId/card/autosave","type":0,"val":"card","end":""},{"old":"/events/:eventId/card/autosave","type":0,"val":"autosave","end":""}],
+    types: placeholder as Registry['cards.autosave']['types'],
+  },
   'cards.generate': {
     methods: ["GET","HEAD"],
     pattern: '/events/:eventId/guests/:guestId/card.pdf',
@@ -233,6 +239,12 @@ const routes = {
     pattern: '/admin/templates/:id',
     tokens: [{"old":"/admin/templates/:id","type":0,"val":"admin","end":""},{"old":"/admin/templates/:id","type":0,"val":"templates","end":""},{"old":"/admin/templates/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['admin.templates.update']['types'],
+  },
+  'admin.templates.autosave': {
+    methods: ["PUT"],
+    pattern: '/admin/templates/:id/autosave',
+    tokens: [{"old":"/admin/templates/:id/autosave","type":0,"val":"admin","end":""},{"old":"/admin/templates/:id/autosave","type":0,"val":"templates","end":""},{"old":"/admin/templates/:id/autosave","type":1,"val":"id","end":""},{"old":"/admin/templates/:id/autosave","type":0,"val":"autosave","end":""}],
+    types: placeholder as Registry['admin.templates.autosave']['types'],
   },
   'admin.templates.publish': {
     methods: ["PUT"],
