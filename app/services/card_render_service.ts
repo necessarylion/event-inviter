@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { generate } from '@pdfme/generator'
 import { pdf2img } from '@pdfme/converter'
 import {
@@ -37,8 +38,18 @@ class CardRenderService {
     qrPayload: string,
     fields: Record<string, string> = {}
   ): Promise<Uint8Array> {
-    const template = cardTemplate.template as Template
+    return this.renderPdf(cardTemplate.template as Template, qrPayload, fields)
+  }
 
+  /**
+   * Render a raw pdfme Template (not tied to a saved CardTemplate) to a PDF —
+   * used for template-preset previews where only the design JSON is in hand.
+   */
+  async renderPdf(
+    template: Template,
+    qrPayload: string,
+    fields: Record<string, string> = {}
+  ): Promise<Uint8Array> {
     // Build the per-field input value, highest priority first. Critically, pdfme
     // only paints image/svg/signature fields when a value is supplied via `inputs`
     // — unlike text, it does NOT fall back to the schema's `content`. So every
@@ -72,13 +83,43 @@ class CardRenderService {
     fields: Record<string, string> = {},
     scale = 3
   ): Promise<Uint8Array> {
-    const pdf = await this.toPdf(cardTemplate, qrPayload, fields)
+    return this.renderPng(cardTemplate.template as Template, qrPayload, fields, scale)
+  }
+
+  /** Render the first page of a raw Template to a PNG (see `toPng`). */
+  async renderPng(
+    template: Template,
+    qrPayload: string,
+    fields: Record<string, string> = {},
+    scale = 3
+  ): Promise<Uint8Array> {
+    const pdf = await this.renderPdf(template, qrPayload, fields)
     const [png] = await pdf2img(pdf, {
       imageType: 'png',
       scale,
       range: { start: 0, end: 0 },
     })
     return new Uint8Array(png)
+  }
+
+  /**
+   * Render a small first-page PNG of a template as a base64 data URI, suitable
+   * for storing as a thumbnail. Uses a low `scale` to keep the bytes down (no
+   * image library is available to re-encode to WebP/JPEG). Returns null on any
+   * render failure so callers can fall back to a cheaper preview.
+   */
+  async previewDataUri(
+    template: Template,
+    qrPayload: string,
+    fields: Record<string, string> = {},
+    scale = 1
+  ): Promise<string | null> {
+    try {
+      const png = await this.renderPng(template, qrPayload, fields, scale)
+      return `data:image/png;base64,${Buffer.from(png).toString('base64')}`
+    } catch {
+      return null
+    }
   }
 
   private async generatePdf(

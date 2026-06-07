@@ -33,6 +33,7 @@ export default class CardController {
         id: preset.id,
         name: preset.name,
         template: preset.template,
+        previewImage: preset.previewImage,
       })),
     })
   }

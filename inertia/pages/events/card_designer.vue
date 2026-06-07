@@ -6,7 +6,12 @@ import type { Template } from '@pdfme/common'
 import CardDesigner from '~/components/card_designer.vue'
 import CardTemplateThumb from '~/components/card_template_thumb.vue'
 
-type Preset = { id: number; name: string; template: Record<string, any> }
+type Preset = {
+  id: number
+  name: string
+  template: Record<string, any>
+  previewImage: string | null
+}
 
 // `template` arrives as a plain JSON object (Inertia prop); cast to pdfme's Template.
 const props = defineProps<{
@@ -98,7 +103,7 @@ function onSave(template: Template) {
             <div
               class="overflow-hidden rounded-md ring-1 ring-line transition group-hover:ring-2 group-hover:ring-accent-500"
             >
-              <CardTemplateThumb :template="t.template" :width="150" />
+              <CardTemplateThumb :template="t.template" :image="t.previewImage" :width="150" />
             </div>
             <span class="text-xs font-medium text-ink-2 group-hover:text-ink">{{ t.name }}</span>
           </button>

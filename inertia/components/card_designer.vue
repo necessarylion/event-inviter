@@ -24,6 +24,7 @@ import {
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import type { Template } from '@pdfme/common'
 import { UiButton } from '~/components/ui'
+import { SIZE_PRESETS, SIZE_DIMENSIONS, DEFAULT_SIZE_PRESET } from '~/constants/card_sizes'
 
 const props = withDefaults(
   defineProps<{
@@ -89,15 +90,12 @@ function lockReserved(next: any, prev: any) {
 // --- Base PDF: paper size & "replace with a PDF" -----------------------------
 // pdfme's basePdf is either a blank-page spec `{ width, height, padding }` (mm) or a
 // base64 PDF data URI. Size controls drive the former; "Replace PDF" sets the latter.
-const PRESETS: Record<string, [number, number]> = {
-  a4: [210, 297],
-  a5: [148, 210],
-  a6: [105, 148],
-  letter: [215.9, 279.4],
-}
-const preset = ref('a6')
-const pdfWidth = ref<number | string>(105)
-const pdfHeight = ref<number | string>(148)
+// The size list lives in `~/constants/card_sizes` — edit it there to add/remove sizes.
+const PRESETS = SIZE_DIMENSIONS
+const [defW, defH] = PRESETS[DEFAULT_SIZE_PRESET]
+const preset = ref(DEFAULT_SIZE_PRESET)
+const pdfWidth = ref<number | string>(defW)
+const pdfHeight = ref<number | string>(defH)
 
 function matchPreset(w: number, h: number): string {
   for (const [key, [pw, ph]] of Object.entries(PRESETS)) {
@@ -321,11 +319,9 @@ defineExpose({ applyTemplate, getTemplate })
             v-model="preset"
             class="h-9 cursor-pointer appearance-none rounded-[9px] border border-line bg-surface pl-3 pr-8 text-[13px] font-medium text-ink outline-none transition-colors focus:border-accent-500"
           >
-            <option value="a6">A6</option>
-            <option value="a5">A5</option>
-            <option value="a4">A4</option>
-            <option value="letter">Letter</option>
-            <option value="custom">Custom</option>
+            <option v-for="size in SIZE_PRESETS" :key="size.key" :value="size.key">
+              {{ size.label }}
+            </option>
           </select>
           <i
             class="pi pi-chevron-down pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-ink-2"

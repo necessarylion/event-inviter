@@ -6,7 +6,13 @@
  */
 import { computed } from 'vue'
 
-const props = defineProps<{ template: Record<string, any>; width?: number }>()
+const props = defineProps<{
+  template: Record<string, any>
+  width?: number
+  // A pre-rendered PNG (data URI) of the first page. When present it's shown
+  // instead of the CSS approximation — a faithful, font-accurate thumbnail.
+  image?: string | null
+}>()
 
 const PT_TO_MM = 0.3528
 
@@ -62,7 +68,8 @@ function isDataImage(s: any) {
     class="relative overflow-hidden rounded-md bg-white ring-1 ring-black/10"
     :style="{ width: `${W}px`, height: `${H}px` }"
   >
-    <template v-for="(s, i) in schemas" :key="i">
+    <img v-if="image" :src="image" class="h-full w-full object-contain" alt="" />
+    <template v-for="(s, i) in schemas" v-else :key="i">
       <div
         v-if="s.type === 'rectangle' || s.type === 'ellipse'"
         class="absolute"

@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 import { ref } from 'vue'
 import type { Template } from '@pdfme/common'
 import CardDesigner from '~/components/card_designer.vue'
+import { UiSwitch } from '~/components/ui'
 
 type Preset = { id: number; name: string; isPublished: boolean }
 
@@ -64,12 +65,12 @@ function onSave(template: Template) {
         class="h-9 w-48 min-w-0 rounded-[9px] border border-line bg-surface px-3 text-[13px] font-medium text-ink outline-none transition-colors placeholder:text-ink-2 focus:border-accent-500"
       />
 
-      <label
-        class="ml-1 inline-flex flex-none cursor-pointer items-center gap-2 text-[13px] font-medium text-ink-2"
-      >
-        <input v-model="isPublished" type="checkbox" class="accent-accent-500" />
-        Published
-      </label>
+      <UiSwitch
+        v-model="isPublished"
+        class="ml-1 flex-none"
+        on-label="Published"
+        off-label="Draft"
+      />
     </template>
   </CardDesigner>
 </template>

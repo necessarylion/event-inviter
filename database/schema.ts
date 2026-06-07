@@ -208,6 +208,7 @@ export class TemplatePresetSchema extends BaseModel {
     'id',
     'isPublished',
     'name',
+    'previewImage',
     'updatedAt',
     'width',
   ] as const
@@ -226,6 +227,8 @@ export class TemplatePresetSchema extends BaseModel {
   declare isPublished: boolean
   @column()
   declare name: string
+  @column()
+  declare previewImage: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()

@@ -1,10 +1,12 @@
 import TemplatePreset from '#models/template_preset'
 import cardTemplateService from '#services/card_template_service'
+import cardRenderService from '#services/card_render_service'
 import invitationService from '#services/invitation_service'
 import {
   createTemplatePresetValidator,
   updateTemplatePresetValidator,
 } from '#validators/template_preset'
+import type { Template } from '@pdfme/common'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AdminTemplatesController {
@@ -44,6 +46,7 @@ export default class AdminTemplatesController {
       description: payload.description ?? null,
       designJson: parsed.template,
       isPublished: payload.isPublished ?? true,
+      previewImage: await this.renderPreview(parsed.template),
       ...cardTemplateService.dimensions(parsed.template),
     })
 
@@ -81,11 +84,15 @@ export default class AdminTemplatesController {
       return response.redirect().back()
     }
 
+    // Keep the existing thumbnail if a re-render fails, rather than blanking it.
+    const previewImage = (await this.renderPreview(parsed.template)) ?? preset.previewImage
+
     preset.merge({
       name: payload.name,
       description: payload.description ?? null,
       designJson: parsed.template,
       isPublished: payload.isPublished ?? preset.isPublished,
+      previewImage,
       ...cardTemplateService.dimensions(parsed.template),
     })
     await preset.save()
@@ -131,6 +138,21 @@ export default class AdminTemplatesController {
       width: preset.width,
       height: preset.height,
       template: preset.template,
+      previewImage: preset.previewImage,
     }
+  }
+
+  /**
+   * Render a thumbnail PNG (base64 data URI) of the template's first page with
+   * sample data filled in, for the listing. Null on failure (the UI falls back
+   * to a CSS approximation).
+   */
+  private renderPreview(template: Template): Promise<string | null> {
+    const sampleQr = invitationService.inviteUrl('SAMPLE')
+    return cardRenderService.previewDataUri(template, sampleQr, {
+      eventTitle: 'Event Title',
+      guestName: 'Guest Name',
+      eventDate: 'Saturday, 01 Jan 2026',
+    })
   }
 }

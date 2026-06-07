@@ -13,7 +13,8 @@ class CardTemplateService {
    */
   defaultTemplate(title: string, sampleQr: string): Template {
     return {
-      basePdf: { width: 105, height: 148, padding: [0, 0, 0, 0] },
+      // 5 × 7 in — the default card size (mirrors DEFAULT_SIZE_PRESET in the designer).
+      basePdf: { width: 127, height: 178, padding: [0, 0, 0, 0] },
       schemas: [
         [
           {

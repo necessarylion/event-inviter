@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3'
 import { Link } from '@adonisjs/inertia/vue'
-import { UiPageHeader, UiButton, UiBadge, UiEmpty } from '~/components/ui'
+import { UiPageHeader, UiButton, UiEmpty, UiSwitch } from '~/components/ui'
 import CardTemplateThumb from '~/components/card_template_thumb.vue'
 
 type Preset = {
@@ -12,6 +12,7 @@ type Preset = {
   width: number
   height: number
   template: Record<string, any>
+  previewImage: string | null
 }
 
 defineProps<{ presets: Preset[] }>()
@@ -58,23 +59,28 @@ function destroy(preset: Preset) {
         class="grid place-items-center border-b border-line bg-surface-2 p-4 no-underline"
       >
         <div class="overflow-hidden rounded-md ring-1 ring-line">
-          <CardTemplateThumb :template="preset.template" :width="170" />
+          <CardTemplateThumb
+            :template="preset.template"
+            :image="preset.previewImage"
+            :width="170"
+          />
         </div>
       </Link>
 
       <div class="flex flex-1 flex-col gap-1 p-4">
-        <div class="flex items-start justify-between gap-2">
-          <h3 class="truncate text-sm font-semibold text-ink">{{ preset.name }}</h3>
-          <UiBadge :variant="preset.isPublished ? 'success' : 'muted'">
-            {{ preset.isPublished ? 'Published' : 'Draft' }}
-          </UiBadge>
-        </div>
+        <h3 class="truncate text-sm font-semibold text-ink">{{ preset.name }}</h3>
         <p v-if="preset.description" class="line-clamp-2 text-xs text-ink-2">
           {{ preset.description }}
         </p>
-        <p class="mt-auto pt-2 text-[11px] text-ink-2">
-          {{ preset.width }} × {{ preset.height }} mm
-        </p>
+        <div class="mt-auto flex items-center justify-between gap-2 pt-3">
+          <UiSwitch
+            :model-value="preset.isPublished"
+            on-label="Published"
+            off-label="Draft"
+            @update:model-value="togglePublish(preset)"
+          />
+          <span class="text-[11px] text-ink-2">{{ preset.width }} × {{ preset.height }} mm</span>
+        </div>
       </div>
 
       <div class="flex items-center gap-2 border-t border-line px-4 py-3">
@@ -85,14 +91,6 @@ function destroy(preset: Preset) {
           icon="pi-pencil"
         >
           Edit
-        </UiButton>
-        <UiButton
-          variant="ghost"
-          size="sm"
-          :icon="preset.isPublished ? 'pi-eye-slash' : 'pi-eye'"
-          @click="togglePublish(preset)"
-        >
-          {{ preset.isPublished ? 'Unpublish' : 'Publish' }}
         </UiButton>
         <button
           type="button"
