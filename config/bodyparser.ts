@@ -18,6 +18,12 @@ const bodyParserConfig = defineConfig({
     convertEmptyStringsToNull: true,
 
     /**
+     * Maximum accepted payload size. Card templates can embed a base PDF as a
+     * base64 data URI, so allow well above the 1mb default.
+     */
+    limit: '25mb',
+
+    /**
      * Content types handled by the form parser.
      */
     types: ['application/x-www-form-urlencoded'],
@@ -31,6 +37,12 @@ const bodyParserConfig = defineConfig({
      * Normalize empty string values to null.
      */
     convertEmptyStringsToNull: true,
+
+    /**
+     * Maximum accepted payload size. Card templates can embed a base PDF as a
+     * base64 data URI, so allow well above the 1mb default.
+     */
+    limit: '25mb',
 
     /**
      * Content types handled by the JSON parser.

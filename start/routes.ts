@@ -86,7 +86,9 @@ router
     router.post('events/:eventId/check-in', [controllers.CheckIns, 'verify']).as('checkins.verify')
 
     /**
-     * Invitation card designer + per-guest PDF
+     * Invitation card designer + per-guest card. The download serves a PDF and
+     * the browser rasterizes it to PNG (see use_card_image); email attaches a
+     * server-rendered PNG.
      */
     router.get('events/:eventId/card', [controllers.Card, 'design']).as('cards.design')
     router.put('events/:eventId/card', [controllers.Card, 'save']).as('cards.save')

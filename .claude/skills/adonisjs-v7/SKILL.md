@@ -17,6 +17,7 @@ Runtime is **Bun** (`bun.lock`) on Node >= 24. Run ace via `node ace <command>`.
 1. **Models extend auto-generated schema classes.** `database/schema.ts` is generated from
    migrations (DO NOT EDIT it). Each table gets a `<Name>Schema` class with typed `@column`
    declarations. Your model composes it:
+
    ```ts
    // app/models/user.ts
    import { UserSchema } from '#database/schema'
@@ -25,29 +26,36 @@ Runtime is **Bun** (`bun.lock`) on Node >= 24. Run ace via `node ace <command>`.
      // add getters, relations, and custom logic here — NOT columns
    }
    ```
+
    Columns live in the generated schema, not the model. Regenerate after a migration with
    `node ace migration:run` (auto-regenerates) or `node ace schema:generate`. Customize generation
    via `database/schema_rules.ts`.
 
 2. **Validators use `vine.create()`, not `vine.compile()`.**
+
    ```ts
    export const signupValidator = vine.create({ email: vine.string().email(), ... })
    ```
 
 3. **Routes reference typed controllers from `#generated/controllers`** — no magic strings,
    no manual imports of the controller class:
+
    ```ts
    import { controllers } from '#generated/controllers'
    router.get('signup', [controllers.NewAccount, 'create'])
    ```
+
    The `#generated/*` files (controllers, events, listeners) are auto-built by the `init` hooks in
    `adonisrc.ts`. Treat everything under `.adonisjs/` as generated — never edit by hand.
 
 4. **Transformers** (`app/transformers/`, `make:transformer`) shape model data for API responses,
    extending `BaseTransformer<Model>`:
+
    ```ts
    export default class UserTransformer extends BaseTransformer<User> {
-     toObject() { return this.pick(this.resource, ['id', 'email', 'initials']) }
+     toObject() {
+       return this.pick(this.resource, ['id', 'email', 'initials'])
+     }
    }
    ```
 
@@ -126,6 +134,7 @@ skips that wiring — only do it to edit an existing file.
 ## Before finishing backend changes
 
 Run the project checks (Bun):
+
 ```bash
 node ace migration:run    # if you added a migration (also regenerates schema.ts)
 bun run typecheck         # tsc --noEmit && vue-tsc for inertia

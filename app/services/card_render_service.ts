@@ -1,143 +1,138 @@
-import { Buffer } from 'node:buffer'
-import qrService from '#services/qr_service'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
-import type { PDFFont, PDFPage } from 'pdf-lib'
+import { generate } from '@pdfme/generator'
+import { pdf2img } from '@pdfme/converter'
+import {
+  text,
+  multiVariableText,
+  image,
+  svg,
+  table,
+  list,
+  line,
+  rectangle,
+  ellipse,
+  circleMark,
+  signature,
+  barcodes,
+} from '@pdfme/schemas'
+import type { Template } from '@pdfme/common'
 import type CardTemplate from '#models/card_template'
-import type { CardElement } from '#models/card_template'
+import fontService from '#services/font_service'
 
 /**
- * Renders an invitation card to a PDF using pdf-lib (no headless browser/canvas).
- * The QR element's content is injected from `qrPayload` so the organizer can scan
- * and verify it at the door.
+ * Renders an invitation card to a PDF using pdfme's generator (pure Node, no
+ * headless browser). The card layout is a pdfme Template designed in the editor.
+ *
+ * The QR field content is owned by the system: at render time every `qrcode`
+ * schema is filled with the guest's invite URL, regardless of what placeholder
+ * was set in the designer — so the organizer can scan and verify it at the door.
+ *
+ * `multiVariableText` schemas (e.g. "Dear {guestName},") get their variables
+ * substituted too: the organizer's saved defaults are kept, then any variable
+ * matching a per-guest field (guestName) or per-event field (eventTitle,
+ * eventDate) is overwritten with the real value.
  */
 class CardRenderService {
-  async toPdf(template: CardTemplate, qrPayload: string): Promise<Uint8Array> {
-    const { width, height } = template
-    const design = template.design
+  async toPdf(
+    cardTemplate: CardTemplate,
+    qrPayload: string,
+    fields: Record<string, string> = {}
+  ): Promise<Uint8Array> {
+    const template = cardTemplate.template as Template
 
-    const pdf = await PDFDocument.create()
-    const page = pdf.addPage([width, height])
-    const font = await pdf.embedFont(StandardFonts.Helvetica)
-    const boldFont = await pdf.embedFont(StandardFonts.HelveticaBold)
-
-    page.drawRectangle({
-      x: 0,
-      y: 0,
-      width,
-      height,
-      color: hexToRgb(design.background || '#ffffff'),
-    })
-
-    for (const element of design.elements ?? []) {
-      await this.drawElement(pdf, page, element, { width, height, font, boldFont, qrPayload })
-    }
-
-    return pdf.save()
-  }
-
-  private async drawElement(
-    pdf: PDFDocument,
-    page: PDFPage,
-    element: CardElement,
-    ctx: { width: number; height: number; font: PDFFont; boldFont: PDFFont; qrPayload: string }
-  ) {
-    const { height } = ctx
-
-    if (element.type === 'rect') {
-      page.drawRectangle({
-        x: element.x,
-        y: height - element.y - element.height,
-        width: element.width,
-        height: element.height,
-        color: hexToRgb(element.fill),
-      })
-      return
-    }
-
-    if (element.type === 'text') {
-      const font = element.bold ? ctx.boldFont : ctx.font
-      const lines = String(element.text ?? '').split('\n')
-      const lineHeight = element.fontSize * 1.25
-      lines.forEach((line, index) => {
-        const textWidth = font.widthOfTextAtSize(line, element.fontSize)
-        let x = element.x
-        if (element.align === 'center') x = element.x + (element.width - textWidth) / 2
-        else if (element.align === 'right') x = element.x + element.width - textWidth
-        page.drawText(line, {
-          x,
-          y: height - element.y - element.fontSize - index * lineHeight,
-          size: element.fontSize,
-          font,
-          color: hexToRgb(element.fill),
-        })
-      })
-      return
-    }
-
-    if (element.type === 'qr') {
-      const png = await qrService.toBuffer(ctx.qrPayload)
-      const image = await pdf.embedPng(png)
-      page.drawImage(image, {
-        x: element.x,
-        y: height - element.y - element.size,
-        width: element.size,
-        height: element.size,
-      })
-      return
-    }
-
-    if (element.type === 'image') {
-      const embedded = await this.embedImage(pdf, element.src)
-      if (embedded) {
-        page.drawImage(embedded, {
-          x: element.x,
-          y: height - element.y - element.height,
-          width: element.width,
-          height: element.height,
-        })
+    // Build the per-field input value, highest priority first. Critically, pdfme
+    // only paints image/svg/signature fields when a value is supplied via `inputs`
+    // — unlike text, it does NOT fall back to the schema's `content`. So every
+    // field is seeded from its designed `content`, ensuring static images render.
+    const input: Record<string, string> = {}
+    for (const page of template.schemas) {
+      for (const schema of page) {
+        if (schema.type === 'qrcode') {
+          input[schema.name] = qrPayload
+        } else if (schema.type === 'multiVariableText') {
+          input[schema.name] = this.multiVariableInput(schema, fields)
+        } else if (schema.name in fields) {
+          input[schema.name] = fields[schema.name]
+        } else if (typeof schema.content === 'string') {
+          input[schema.name] = schema.content
+        }
       }
     }
+
+    return this.generatePdf(template, input)
   }
 
-  private async embedImage(pdf: PDFDocument, src: string) {
+  /**
+   * Render the card's first page to a PNG image. Builds the same PDF as
+   * `toPdf`, then rasterizes page 1 to PNG via pdfme's converter (native
+   * canvas, runs headless under Node). `scale` controls the output DPI.
+   */
+  async toPng(
+    cardTemplate: CardTemplate,
+    qrPayload: string,
+    fields: Record<string, string> = {},
+    scale = 3
+  ): Promise<Uint8Array> {
+    const pdf = await this.toPdf(cardTemplate, qrPayload, fields)
+    const [png] = await pdf2img(pdf, {
+      imageType: 'png',
+      scale,
+      range: { start: 0, end: 0 },
+    })
+    return new Uint8Array(png)
+  }
+
+  private async generatePdf(
+    template: Template,
+    input: Record<string, string>
+  ): Promise<Uint8Array> {
+    return generate({
+      template,
+      inputs: [input],
+      // The invitation fonts referenced by this template, plus the fallback. Must
+      // mirror what the designer offers, or generate() throws when a schema's
+      // fontName isn't found in the font map.
+      options: { font: await fontService.fontsForTemplate(template) },
+      // Every plugin a designed template might contain must be registered here, or
+      // generate() throws on an unknown schema type. Mirror the designer's set.
+      plugins: {
+        text,
+        multiVariableText,
+        image,
+        qrcode: barcodes.qrcode,
+        table,
+        list,
+        line,
+        rectangle,
+        ellipse,
+        svg,
+        circleMark,
+        signature,
+      },
+    })
+  }
+
+  /**
+   * Build the JSON-string input pdfme expects for a multiVariableText field:
+   * the field's own default variable values, with our known data fields merged
+   * over the top so placeholders like `{guestName}` resolve per guest.
+   */
+  private multiVariableInput(schema: any, fields: Record<string, string>): string {
+    let variables: Record<string, string> = {}
     try {
-      const bytes = await loadImageBytes(src)
-      if (!bytes) return null
-      // PNG magic number: 0x89 0x50; otherwise assume JPEG.
-      return bytes[0] === 0x89 ? pdf.embedPng(bytes) : pdf.embedJpg(bytes)
+      variables =
+        typeof schema.content === 'string' && schema.content ? JSON.parse(schema.content) : {}
     } catch {
-      return null
+      variables = {}
     }
-  }
-}
 
-async function loadImageBytes(src: string): Promise<Uint8Array | null> {
-  if (src.startsWith('data:')) {
-    const base64 = src.split(',')[1] ?? ''
-    return new Uint8Array(Buffer.from(base64, 'base64'))
-  }
-  if (src.startsWith('http://') || src.startsWith('https://')) {
-    const response = await fetch(src)
-    if (!response.ok) return null
-    return new Uint8Array(await response.arrayBuffer())
-  }
-  return null
-}
+    for (const name of (schema.variables as string[] | undefined) ?? []) {
+      if (name in fields) {
+        variables[name] = fields[name]
+      }
+    }
 
-function hexToRgb(hex: string) {
-  const normalized = hex.replace('#', '')
-  const full =
-    normalized.length === 3
-      ? normalized
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : normalized
-  const int = Number.parseInt(full, 16)
-  if (Number.isNaN(int) || full.length !== 6) {
-    return rgb(0, 0, 0)
+    return JSON.stringify(variables)
   }
-  return rgb(((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255)
 }
 
 export default new CardRenderService()

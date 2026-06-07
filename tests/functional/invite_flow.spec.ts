@@ -36,7 +36,7 @@ test.group('Invite & check-in flow', (group) => {
   test('public landing page renders for SEO', async ({ client }) => {
     const response = await client.get('/')
     response.assertStatus(200)
-    response.assertTextIncludes('Event Inviter')
+    response.assertTextIncludes('Guest Invite')
     response.assertTextIncludes('application/ld+json')
   })
 

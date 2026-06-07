@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3'
+import { Link } from '@adonisjs/inertia/vue'
 import EventFields from '~/components/event_fields.vue'
+import { UiButton, UiCard, UiPageHeader } from '~/components/ui'
 
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
@@ -34,19 +36,27 @@ function submit() {
 <template>
   <Head title="Create event" />
 
-  <div class="page" style="max-width: 760px">
-    <div class="page-header">
-      <div>
-        <h1>Create event</h1>
-        <p>Set up your event, then add guests and send invitations.</p>
-      </div>
-    </div>
+  <div class="mx-auto max-w-[760px]">
+    <Link
+      href="/dashboard"
+      class="mb-4 inline-flex items-center gap-2 text-sm font-medium text-ink-2 no-underline transition-colors hover:text-ink"
+    >
+      <i class="pi pi-arrow-left" /> Back to events
+    </Link>
 
-    <form @submit.prevent="submit">
-      <EventFields :form="form" />
-      <div class="row">
-        <button type="submit" class="btn" :disabled="form.processing">Create event</button>
-      </div>
-    </form>
+    <UiPageHeader
+      title="Create event"
+      subtitle="Set up your event, then add guests and send invitations."
+    />
+
+    <UiCard>
+      <form class="flex flex-col" @submit.prevent="submit">
+        <EventFields :form="form" />
+        <div class="mt-7 flex items-center gap-3">
+          <UiButton type="submit" :loading="form.processing" icon="pi-check">Create event</UiButton>
+          <Link href="/dashboard" class="btn btn-ghost">Cancel</Link>
+        </div>
+      </form>
+    </UiCard>
   </div>
 </template>

@@ -1,4 +1,5 @@
 import './css/app.css'
+import 'primeicons/primeicons.css'
 import 'vue-sonner/style.css'
 import { client } from '~/client'
 import Layout from '~/layouts/default.vue'

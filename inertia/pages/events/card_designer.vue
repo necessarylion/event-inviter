@@ -1,240 +1,304 @@
 <script setup lang="ts">
-import Konva from 'konva'
-import QRCode from 'qrcode'
+import { Designer } from '@pdfme/ui'
+import { toast } from 'vue-sonner'
+import {
+  text,
+  multiVariableText,
+  image,
+  svg,
+  table,
+  list,
+  line,
+  rectangle,
+  ellipse,
+  circleMark,
+  signature,
+  barcodes,
+} from '@pdfme/schemas'
 import { Head, router } from '@inertiajs/vue3'
 import { Link } from '@adonisjs/inertia/vue'
-import { onMounted, onBeforeUnmount, ref, watch, computed, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import type { Template } from '@pdfme/common'
+import { UiButton } from '~/components/ui'
+import CardTemplateThumb from '~/components/card_template_thumb.vue'
+import { CARD_TEMPLATES, type CardTemplatePreset } from '~/lib/card_templates'
 
-type El = {
-  id: string
-  type: 'text' | 'rect' | 'image' | 'qr'
-  x: number
-  y: number
-  width?: number
-  height?: number
-  fontSize?: number
-  fill?: string
-  align?: 'left' | 'center' | 'right'
-  bold?: boolean
-  text?: string
-  src?: string
-  size?: number
-}
-type Design = { background: string; elements: El[] }
+// `template` arrives as a plain JSON object (Inertia prop); cast to pdfme's Template.
+const props = defineProps<{ event: { id: number; title: string }; template: Record<string, any> }>()
 
-const props = defineProps<{
-  event: { id: number; title: string }
-  template: { name: string; width: number; height: number; design: Design }
-  sampleQrUrl: string
-}>()
-
-const name = ref(props.template.name)
-const width = ref(props.template.width)
-const height = ref(props.template.height)
-const design = ref<Design>(JSON.parse(JSON.stringify(props.template.design)))
-const selectedId = ref<string | null>(null)
-const saving = ref(false)
-
-const selected = computed(() => design.value.elements.find((e) => e.id === selectedId.value))
+// `guestName` is the only field whose value differs per guest, so its *name* (the
+// data-binding key the renderer fills in — see CardController.fieldsFor) is locked in
+// the designer so a rename or delete can't silently break the merge. eventTitle /
+// eventDate are per-event constants the organizer can rename, restyle, or remove
+// freely. The QR field binds by *type* and is enforced on save, so it needs no lock.
+const RESERVED = ['guestName']
 
 const container = ref<HTMLDivElement | null>(null)
-let stage: Konva.Stage | null = null
-let layer: Konva.Layer | null = null
-let dragging = false
-let qrDataUrl = ''
-const imageCache: Record<string, HTMLImageElement> = {}
+const saving = ref(false)
+let designer: Designer | null = null
 
-function uid() {
-  return Math.random().toString(36).slice(2, 9)
-}
+const plain = (t: any): any => JSON.parse(JSON.stringify(t))
 
-function getImage(src: string, onReady: () => void) {
-  if (imageCache[src]) return imageCache[src]
-  const img = new Image()
-  img.crossOrigin = 'anonymous'
-  img.onload = onReady
-  img.src = src
-  imageCache[src] = img
-  return img
-}
+/**
+ * Keep the reserved fields intact after an in-designer edit. Mutates `next` and
+ * reports what it had to undo so the user can be told why their change snapped back.
+ */
+function lockReserved(next: any, prev: any) {
+  const namesOf = (t: any): string[] => t.schemas.flat().map((s: any) => s.name)
+  const lost = RESERVED.filter((n) => namesOf(prev).includes(n) && !namesOf(next).includes(n))
+  if (lost.length === 0) {
+    return { changed: false, renamed: [] as string[], restored: [] as string[] }
+  }
 
-function renderLayer() {
-  if (!stage || !layer) return
-  layer.destroyChildren()
-
-  layer.add(
-    new Konva.Rect({
-      x: 0,
-      y: 0,
-      width: width.value,
-      height: height.value,
-      fill: design.value.background,
+  // Rename: the page keeps its length, so positions line up — restore the name
+  // wherever a reserved field's name was changed in place.
+  const renamed: string[] = []
+  next.schemas.forEach((page: any[], pi: number) => {
+    const prevPage: any[] = prev.schemas[pi] ?? []
+    if (page.length !== prevPage.length) return
+    page.forEach((schema, si) => {
+      const was = prevPage[si]
+      if (was && RESERVED.includes(was.name) && schema.name !== was.name) {
+        schema.name = was.name
+        renamed.push(was.name)
+      }
     })
-  )
+  })
 
-  for (const el of design.value.elements) {
-    let node: Konva.Shape | null = null
-
-    if (el.type === 'rect') {
-      node = new Konva.Rect({
-        x: el.x,
-        y: el.y,
-        width: el.width ?? 100,
-        height: el.height ?? 100,
-        fill: el.fill ?? '#000000',
-      })
-    } else if (el.type === 'text') {
-      node = new Konva.Text({
-        x: el.x,
-        y: el.y,
-        width: el.width ?? 200,
-        text: el.text ?? '',
-        fontSize: el.fontSize ?? 24,
-        fill: el.fill ?? '#000000',
-        align: el.align ?? 'left',
-        fontStyle: el.bold ? 'bold' : 'normal',
-        fontFamily: 'Helvetica, Arial, sans-serif',
-      })
-    } else if (el.type === 'qr') {
-      node = new Konva.Image({
-        x: el.x,
-        y: el.y,
-        width: el.size ?? 200,
-        height: el.size ?? 200,
-        image: qrDataUrl ? getImage(qrDataUrl, () => layer?.draw()) : undefined,
-      })
-    } else if (el.type === 'image') {
-      node = new Konva.Image({
-        x: el.x,
-        y: el.y,
-        width: el.width ?? 200,
-        height: el.height ?? 200,
-        image: el.src ? getImage(el.src, () => layer?.draw()) : undefined,
-        stroke: el.src ? undefined : '#d1d5db',
-        strokeWidth: el.src ? 0 : 1,
-      })
+  // Deletion: anything still missing was removed — add it back from the snapshot.
+  const present = new Set(namesOf(next))
+  const restored: string[] = []
+  for (const name of lost) {
+    if (present.has(name)) continue
+    const original = prev.schemas.flat().find((s: any) => s.name === name)
+    if (original) {
+      if (!next.schemas[0]) next.schemas[0] = []
+      next.schemas[0].push(plain(original))
+      restored.push(name)
     }
+  }
 
-    if (!node) continue
+  return { changed: renamed.length > 0 || restored.length > 0, renamed, restored }
+}
 
-    node.draggable(true)
-    node.on('mousedown touchstart click', () => {
-      selectedId.value = el.id
-    })
-    node.on('dragstart', () => {
-      dragging = true
-    })
-    node.on('dragend', (e) => {
-      el.x = Math.round(e.target.x())
-      el.y = Math.round(e.target.y())
-      dragging = false
-    })
+// --- Base PDF: paper size & "replace with a PDF" -----------------------------
+// pdfme's basePdf is either a blank-page spec `{ width, height, padding }` (mm) or a
+// base64 PDF data URI. Size controls drive the former; "Replace PDF" sets the latter.
+const PRESETS: Record<string, [number, number]> = {
+  a4: [210, 297],
+  a5: [148, 210],
+  a6: [105, 148],
+  letter: [215.9, 279.4],
+}
+const preset = ref('a6')
+const pdfWidth = ref<number | string>(105)
+const pdfHeight = ref<number | string>(148)
 
-    if (el.id === selectedId.value) {
-      // selection outline
-      const box = node.getClientRect({ relativeTo: layer })
-      layer.add(
-        new Konva.Rect({
-          x: box.x - 2,
-          y: box.y - 2,
-          width: box.width + 4,
-          height: box.height + 4,
-          stroke: '#2563eb',
-          strokeWidth: 2,
-          dash: [6, 4],
-          listening: false,
+function matchPreset(w: number, h: number): string {
+  for (const [key, [pw, ph]] of Object.entries(PRESETS)) {
+    if (Math.abs(pw - w) < 0.5 && Math.abs(ph - h) < 0.5) return key
+  }
+  return 'custom'
+}
+
+// A card is full-bleed, not a document — no printable margin.
+const NO_MARGIN: [number, number, number, number] = [0, 0, 0, 0]
+
+// Swap the base while preserving the designed fields.
+function setBasePdf(basePdf: any) {
+  if (!designer) return
+  designer.updateTemplate({ ...designer.getTemplate(), basePdf })
+}
+
+function applySize() {
+  const w = Number(pdfWidth.value)
+  const h = Number(pdfHeight.value)
+  if (!w || !h || w <= 0 || h <= 0) return
+  setBasePdf({ width: w, height: h, padding: NO_MARGIN })
+}
+
+watch(preset, (value) => {
+  const dims = PRESETS[value]
+  if (!dims) return
+  pdfWidth.value = dims[0]
+  pdfHeight.value = dims[1]
+  applySize()
+})
+
+function onSizeInput() {
+  applySize()
+  preset.value = matchPreset(Number(pdfWidth.value), Number(pdfHeight.value))
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+async function onReplacePdf(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  try {
+    setBasePdf(await readAsDataUrl(file))
+    toast.success('Base PDF replaced.')
+  } catch {
+    toast.error('Could not read that PDF.')
+  } finally {
+    input.value = ''
+  }
+}
+
+// --- Pre-defined templates ---------------------------------------------------
+const templates = CARD_TEMPLATES
+const drawerOpen = ref(false)
+
+// Point the size controls at a template's page size.
+function syncSizeFromTemplate(tpl: any) {
+  const base = tpl.basePdf
+  if (base && typeof base === 'object' && base.width && base.height) {
+    pdfWidth.value = base.width
+    pdfHeight.value = base.height
+    preset.value = matchPreset(base.width, base.height)
+  }
+}
+
+function applyTemplate(choice: CardTemplatePreset) {
+  if (!designer) return
+  const ok = window.confirm(
+    `Replace the current design with the "${choice.name}" template? Unsaved changes will be lost.`
+  )
+  if (!ok) return
+  const tpl = plain(choice.template)
+  designer.updateTemplate(tpl)
+  syncSizeFromTemplate(tpl)
+  drawerOpen.value = false
+  toast.success(`Applied the "${choice.name}" template.`)
+}
+
+type FontData = { data: string | ArrayBuffer; fallback?: boolean }
+
+/**
+ * pdfme will only accept a font-data URL if it points at a public host — its
+ * @pdfme/schemas SSRF guard rejects `localhost` and private IPs (so font URLs
+ * break on a dev server). Mirror that rule for our own origin: when it's public
+ * we hand pdfme the URL and let it fetch each font lazily; otherwise we fetch the
+ * bytes ourselves (a same-origin browser fetch is fine — only pdfme's guard objects).
+ */
+function isPublicHost(hostname: string): boolean {
+  const h = hostname.toLowerCase()
+  if (h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '[::1]') return false
+  if (/^127\./.test(h)) return false
+  if (/^10\./.test(h)) return false
+  if (/^169\.254\./.test(h)) return false
+  if (/^192\.168\./.test(h)) return false
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false
+  return true
+}
+
+/**
+ * Build the pdfme font map from the self-hosted invitation fonts in
+ * `public/fonts/manifest.json`. On a public host each font's `data` is its URL,
+ * which pdfme fetches lazily (only when used) so listing 50+ fonts doesn't bloat
+ * the page; on localhost/private hosts the bytes are fetched up front instead.
+ * Returns `undefined` on failure so the Designer falls back to pdfme's built-in font.
+ */
+async function buildFonts(): Promise<Record<string, FontData> | undefined> {
+  try {
+    const res = await fetch('/fonts/manifest.json')
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const entries = (await res.json()) as Array<{ file: string; name: string; fallback?: boolean }>
+    const font: Record<string, FontData> = {}
+
+    if (isPublicHost(window.location.hostname)) {
+      for (const e of entries) {
+        font[e.name] = { data: `${window.location.origin}/fonts/${e.file}`, fallback: !!e.fallback }
+      }
+    } else {
+      await Promise.all(
+        entries.map(async (e) => {
+          const r = await fetch(`/fonts/${e.file}`)
+          if (r.ok) font[e.name] = { data: await r.arrayBuffer(), fallback: !!e.fallback }
         })
       )
     }
-
-    layer.add(node)
+    return Object.keys(font).length ? font : undefined
+  } catch {
+    return undefined
   }
-
-  layer.draw()
-}
-
-function fitStage() {
-  if (!container.value) return
-  const maxW = container.value.clientWidth
-  const scale = Math.min(1, maxW / width.value)
-  stage?.size({ width: width.value * scale, height: height.value * scale })
-  stage?.scale({ x: scale, y: scale })
-  stage?.draw()
 }
 
 onMounted(async () => {
-  qrDataUrl = await QRCode.toDataURL(props.sampleQrUrl, { margin: 1, width: 320 })
-  stage = new Konva.Stage({ container: container.value!, width: width.value, height: height.value })
-  layer = new Konva.Layer()
-  stage.add(layer)
-
-  // Click on empty canvas clears selection
-  stage.on('click tap', (e) => {
-    if (e.target === stage) selectedId.value = null
+  // `props.template` is a Vue reactive proxy (Inertia props are reactive). pdfme's
+  // Designer deep-clones it with `structuredClone`, which throws on proxies, so hand
+  // it a plain JSON copy — the template is pure JSON data, so this is lossless.
+  const template = plain(props.template) as Template
+  const font = await buildFonts()
+  designer = new Designer({
+    domContainer: container.value!,
+    template,
+    options: font ? { font } : {},
+    plugins: {
+      'Text': text,
+      'Multi Variable Text': multiVariableText,
+      'Image': image,
+      'QR code': barcodes.qrcode,
+      'Table': table,
+      'List': list,
+      'Line': line,
+      'Rectangle': rectangle,
+      'Ellipse': ellipse,
+      'SVG': svg,
+      'Circle Mark': circleMark,
+      'Signature': signature,
+    },
   })
 
-  fitStage()
-  renderLayer()
-  window.addEventListener('resize', fitStage)
+  // Reflect the loaded template's page size in the controls (leaves a PDF base as-is)
+  // and drop any leftover document margin so the card is full-bleed.
+  const base = designer.getTemplate().basePdf as any
+  if (base && typeof base === 'object' && base.width && base.height) {
+    pdfWidth.value = base.width
+    pdfHeight.value = base.height
+    preset.value = matchPreset(base.width, base.height)
+    if (!Array.isArray(base.padding) || base.padding.some((n: number) => n !== 0)) {
+      setBasePdf({ width: base.width, height: base.height, padding: NO_MARGIN })
+    }
+  }
+
+  let snapshot = plain(designer.getTemplate())
+  let locking = false
+  designer.onChangeTemplate((next) => {
+    if (locking) return
+    const candidate = plain(next)
+    const { changed, renamed, restored } = lockReserved(candidate, snapshot)
+    if (changed) {
+      locking = true
+      designer!.updateTemplate(candidate)
+      locking = false
+      const uniq = (a: string[]) => [...new Set(a)].join(', ')
+      if (renamed.length) toast.info(`System field can't be renamed: ${uniq(renamed)}`)
+      if (restored.length) toast.info(`System field restored: ${uniq(restored)}`)
+    }
+    snapshot = plain(candidate)
+  })
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', fitStage)
-  stage?.destroy()
+  designer?.destroy()
+  designer = null
 })
 
-watch(
-  [design, selectedId, width, height],
-  () => {
-    if (dragging) return
-    nextTick(() => {
-      fitStage()
-      renderLayer()
-    })
-  },
-  { deep: true }
-)
-
-function addText() {
-  const el: El = {
-    id: uid(),
-    type: 'text',
-    x: 80,
-    y: 80,
-    width: 300,
-    fontSize: 28,
-    fill: '#ffffff',
-    align: 'left',
-    bold: false,
-    text: 'New text',
-  }
-  design.value.elements.push(el)
-  selectedId.value = el.id
-}
-function addRect() {
-  const el: El = { id: uid(), type: 'rect', x: 80, y: 80, width: 200, height: 120, fill: '#2563eb' }
-  design.value.elements.push(el)
-  selectedId.value = el.id
-}
-function addImage() {
-  const src = window.prompt('Image URL (https://…)')
-  if (!src) return
-  const el: El = { id: uid(), type: 'image', x: 80, y: 80, width: 200, height: 200, src }
-  design.value.elements.push(el)
-  selectedId.value = el.id
-}
-function removeSelected() {
-  const el = selected.value
-  if (!el || el.type === 'qr') return
-  design.value.elements = design.value.elements.filter((e) => e.id !== el.id)
-  selectedId.value = null
-}
-
 function save() {
+  if (!designer) return
   saving.value = true
   router.put(
     `/events/${props.event.id}/card`,
-    { name: name.value, width: width.value, height: height.value, design: design.value },
+    { template: JSON.stringify(designer.getTemplate()) },
     { preserveScroll: true, preserveState: true, onFinish: () => (saving.value = false) }
   )
 }
@@ -243,220 +307,145 @@ function save() {
 <template>
   <Head title="Card designer" />
 
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h1>Card designer</h1>
-        <p>{{ event.title }} — the QR code is required and is replaced per guest when generated.</p>
-      </div>
-      <div class="row">
-        <Link :href="`/events/${event.id}`" class="btn btn-secondary">Back to event</Link>
-        <button class="btn" :disabled="saving" @click="save">Save design</button>
+  <!-- The layout runs this page full-bleed (no global header), so it fills the
+       whole viewport: a sticky toolbar on top, the editor filling the rest. -->
+  <div class="flex flex-1 flex-col">
+    <div
+      class="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-line bg-surface px-7 py-3"
+    >
+      <Link
+        :href="`/events/${event.id}`"
+        class="inline-flex items-center gap-2 text-sm font-medium text-ink-2 no-underline transition-colors hover:text-ink"
+      >
+        <i class="pi pi-arrow-left" /> Back to event
+      </Link>
+
+      <div class="flex items-center gap-2">
+        <!-- Pre-defined templates -->
+        <button
+          type="button"
+          class="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[9px] border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-2"
+          @click="drawerOpen = true"
+        >
+          <i class="pi pi-clone text-ink-2" /> Templates
+        </button>
+
+        <span class="mx-1 h-5 w-px bg-line" />
+
+        <!-- Paper-size preset -->
+        <div class="relative">
+          <select
+            v-model="preset"
+            class="h-9 cursor-pointer appearance-none rounded-[9px] border border-line bg-surface pl-3 pr-8 text-[13px] font-medium text-ink outline-none transition-colors focus:border-accent-500"
+          >
+            <option value="a6">A6</option>
+            <option value="a5">A5</option>
+            <option value="a4">A4</option>
+            <option value="letter">Letter</option>
+            <option value="custom">Custom</option>
+          </select>
+          <i
+            class="pi pi-chevron-down pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-ink-2"
+          />
+        </div>
+
+        <!-- Custom width × height (mm) -->
+        <div
+          class="flex h-9 items-center gap-1.5 rounded-[9px] border border-line bg-surface px-3 text-[13px] text-ink-2 transition-colors focus-within:border-accent-500"
+        >
+          <input
+            v-model="pdfWidth"
+            type="number"
+            min="1"
+            aria-label="Width (mm)"
+            class="w-10 bg-transparent text-center font-medium text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            @change="onSizeInput"
+          />
+          <span class="text-ink-2">×</span>
+          <input
+            v-model="pdfHeight"
+            type="number"
+            min="1"
+            aria-label="Height (mm)"
+            class="w-10 bg-transparent text-center font-medium text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            @change="onSizeInput"
+          />
+          <span>mm</span>
+        </div>
+
+        <!-- Replace the base with an uploaded PDF -->
+        <label
+          class="inline-flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[9px] border border-line bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-2"
+        >
+          <i class="pi pi-file-pdf text-ink-2" /> Replace PDF
+          <input type="file" accept="application/pdf,.pdf" class="hidden" @change="onReplacePdf" />
+        </label>
+
+        <UiButton class="h-9" :loading="saving" icon="pi-check" @click="save">Save design</UiButton>
       </div>
     </div>
 
-    <div class="designer">
-      <!-- Toolbar -->
-      <div class="panel">
-        <h3>Add</h3>
-        <div class="row" style="margin: 10px 0 20px">
-          <button class="btn btn-secondary btn-sm" @click="addText">+ Text</button>
-          <button class="btn btn-secondary btn-sm" @click="addRect">+ Box</button>
-          <button class="btn btn-secondary btn-sm" @click="addImage">+ Image</button>
-        </div>
-
-        <h3>Card</h3>
-        <div class="field" style="margin-top: 10px">
-          <label>Name</label>
-          <input v-model="name" type="text" />
-        </div>
-        <div class="form-grid" style="margin-top: 12px">
-          <div class="field">
-            <label>Width</label><input v-model.number="width" type="number" />
-          </div>
-          <div class="field">
-            <label>Height</label><input v-model.number="height" type="number" />
-          </div>
-        </div>
-        <div class="field" style="margin-top: 12px">
-          <label>Background</label>
-          <input v-model="design.background" type="color" style="height: 40px" />
-        </div>
-
-        <h3 style="margin-top: 20px">Layers</h3>
-        <ul class="layers">
-          <li
-            v-for="el in design.elements"
-            :key="el.id"
-            :class="{ active: el.id === selectedId }"
-            @click="selectedId = el.id"
-          >
-            <span>{{
-              el.type === 'qr' ? '🔒 QR code' : el.type === 'text' ? `“${el.text}”` : el.type
-            }}</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Canvas -->
-      <div class="canvas-wrap">
-        <div ref="container" class="canvas" />
-      </div>
-
-      <!-- Properties -->
-      <div class="panel">
-        <h3>Properties</h3>
-        <p v-if="!selected" class="muted" style="margin-top: 10px">Select an element to edit it.</p>
-
-        <template v-else>
-          <div class="form-grid" style="margin-top: 12px">
-            <div class="field">
-              <label>X</label><input v-model.number="selected.x" type="number" />
-            </div>
-            <div class="field">
-              <label>Y</label><input v-model.number="selected.y" type="number" />
-            </div>
-          </div>
-
-          <template v-if="selected.type === 'text'">
-            <div class="field" style="margin-top: 12px">
-              <label>Text</label>
-              <textarea v-model="selected.text" />
-            </div>
-            <div class="form-grid" style="margin-top: 12px">
-              <div class="field">
-                <label>Font size</label><input v-model.number="selected.fontSize" type="number" />
-              </div>
-              <div class="field">
-                <label>Width</label><input v-model.number="selected.width" type="number" />
-              </div>
-            </div>
-            <div class="form-grid" style="margin-top: 12px">
-              <div class="field">
-                <label>Color</label
-                ><input v-model="selected.fill" type="color" style="height: 40px" />
-              </div>
-              <div class="field">
-                <label>Align</label>
-                <select v-model="selected.align">
-                  <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
-                </select>
-              </div>
-            </div>
-            <label class="row" style="margin-top: 12px; font-weight: 400">
-              <input v-model="selected.bold" type="checkbox" style="width: auto; height: auto" />
-              Bold
-            </label>
-          </template>
-
-          <template v-else-if="selected.type === 'rect'">
-            <div class="form-grid" style="margin-top: 12px">
-              <div class="field">
-                <label>Width</label><input v-model.number="selected.width" type="number" />
-              </div>
-              <div class="field">
-                <label>Height</label><input v-model.number="selected.height" type="number" />
-              </div>
-            </div>
-            <div class="field" style="margin-top: 12px">
-              <label>Fill</label><input v-model="selected.fill" type="color" style="height: 40px" />
-            </div>
-          </template>
-
-          <template v-else-if="selected.type === 'image'">
-            <div class="field" style="margin-top: 12px">
-              <label>Image URL</label><input v-model="selected.src" type="url" />
-            </div>
-            <div class="form-grid" style="margin-top: 12px">
-              <div class="field">
-                <label>Width</label><input v-model.number="selected.width" type="number" />
-              </div>
-              <div class="field">
-                <label>Height</label><input v-model.number="selected.height" type="number" />
-              </div>
-            </div>
-          </template>
-
-          <template v-else-if="selected.type === 'qr'">
-            <div class="field" style="margin-top: 12px">
-              <label>Size</label><input v-model.number="selected.size" type="number" />
-            </div>
-            <p class="muted" style="margin-top: 10px">
-              The QR content is set automatically for each guest.
-            </p>
-          </template>
-
-          <button
-            v-if="selected.type !== 'qr'"
-            class="btn btn-danger btn-sm"
-            style="margin-top: 18px"
-            @click="removeSelected"
-          >
-            Delete element
-          </button>
-        </template>
-      </div>
-    </div>
+    <div ref="container" class="min-h-0 flex-1 overflow-hidden" />
   </div>
+
+  <!-- Template picker: right slide-over drawer -->
+  <Transition name="drawer">
+    <div v-if="drawerOpen" class="fixed inset-0 z-50">
+      <div class="absolute inset-0 bg-black/30" @click="drawerOpen = false" />
+      <aside
+        class="absolute inset-y-0 right-0 flex w-[360px] max-w-[90vw] flex-col border-l border-line bg-surface shadow-2xl"
+      >
+        <div class="flex items-center justify-between border-b border-line px-4 py-3">
+          <div>
+            <h2 class="text-sm font-semibold text-ink">Templates</h2>
+            <p class="text-xs text-ink-2">Pick a starter design for this card.</p>
+          </div>
+          <button
+            type="button"
+            class="grid h-8 w-8 place-items-center rounded-lg text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+            aria-label="Close"
+            @click="drawerOpen = false"
+          >
+            <i class="pi pi-times" />
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 overflow-y-auto p-4">
+          <button
+            v-for="t in templates"
+            :key="t.id"
+            type="button"
+            class="group flex flex-col items-center gap-2"
+            @click="applyTemplate(t)"
+          >
+            <div
+              class="overflow-hidden rounded-md ring-1 ring-line transition group-hover:ring-2 group-hover:ring-accent-500"
+            >
+              <CardTemplateThumb :template="t.template" :width="150" />
+            </div>
+            <span class="text-xs font-medium text-ink-2 group-hover:text-ink">{{ t.name }}</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
-.designer {
-  display: grid;
-  grid-template-columns: 240px 1fr 260px;
-  gap: 20px;
-  align-items: start;
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.2s ease;
 }
-.panel {
-  background: #fff;
-  border: 1px solid var(--gray-3);
-  border-radius: 12px;
-  padding: 16px;
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
 }
-.panel h3 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--gray-7);
+.drawer-enter-active aside,
+.drawer-leave-active aside {
+  transition: transform 0.25s ease;
 }
-.canvas-wrap {
-  background: var(--gray-2);
-  border: 1px solid var(--gray-3);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-}
-.canvas {
-  width: 100%;
-  max-width: 480px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-}
-.layers {
-  list-style: none;
-  margin-top: 8px;
-  font-size: 13px;
-}
-.layers li {
-  padding: 8px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.layers li:hover {
-  background: var(--gray-2);
-}
-.layers li.active {
-  background: #2563eb1a;
-  color: #2563eb;
-}
-@media (max-width: 1000px) {
-  .designer {
-    grid-template-columns: 1fr;
-  }
+.drawer-enter-from aside,
+.drawer-leave-to aside {
+  transform: translateX(100%);
 }
 </style>

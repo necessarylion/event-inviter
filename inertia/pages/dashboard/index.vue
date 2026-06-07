@@ -2,6 +2,7 @@
 import { DateTime } from 'luxon'
 import { Head } from '@inertiajs/vue3'
 import { Link } from '@adonisjs/inertia/vue'
+import { UiButton, UiBadge, UiEmpty, UiPageHeader } from '~/components/ui'
 
 type EventRow = {
   id: number
@@ -23,48 +24,61 @@ function formatDate(iso: string | null) {
 <template>
   <Head title="Your events" />
 
-  <div class="page">
-    <div class="page-header">
-      <div>
-        <h1>Your events</h1>
-        <p>{{ totalEvents }} event{{ totalEvents === 1 ? '' : 's' }} total</p>
-      </div>
-      <Link route="events.create" class="btn">Create event</Link>
-    </div>
-
-    <div v-if="events.length" class="grid grid-3">
-      <Link
-        v-for="event in events"
-        :key="event.id"
-        route="events.show"
-        :params="{ id: event.id }"
-        class="card"
-      >
-        <div class="row" style="justify-content: space-between">
-          <h3>{{ event.title }}</h3>
-          <span class="badge" :class="event.status === 'published' ? 'badge-success' : ''">
-            {{ event.status }}
-          </span>
-        </div>
-        <p class="muted" style="margin: 8px 0 16px">{{ formatDate(event.startsAt) }}</p>
-        <p v-if="event.location" class="muted">📍 {{ event.location }}</p>
-        <div class="row" style="margin-top: 16px; gap: 18px">
-          <span
-            ><strong>{{ event.guestsCount }}</strong> <span class="muted">guests</span></span
-          >
-          <span
-            ><strong>{{ event.checkedInCount }}</strong> <span class="muted">checked in</span></span
-          >
-        </div>
+  <UiPageHeader
+    title="Your events"
+    :subtitle="`${totalEvents} event${totalEvents === 1 ? '' : 's'} total`"
+  >
+    <template #actions>
+      <Link route="events.create" class="btn btn-primary">
+        <i class="pi pi-plus" /> Create event
       </Link>
-    </div>
+    </template>
+  </UiPageHeader>
 
-    <div v-else class="card" style="text-align: center; padding: 60px 20px">
-      <h3>No events yet</h3>
-      <p class="muted" style="margin: 8px 0 20px">
-        Create your first event to start inviting guests.
-      </p>
-      <Link route="events.create" class="btn">Create event</Link>
-    </div>
+  <div
+    v-if="events.length"
+    class="grid gap-[18px] [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]"
+  >
+    <Link
+      v-for="event in events"
+      :key="event.id"
+      route="events.show"
+      :params="{ id: event.id }"
+      class="group block rounded-card border border-line bg-surface px-6 py-[22px] no-underline transition-all hover:-translate-y-[3px] hover:border-accent-500/40 hover:shadow-card"
+    >
+      <div class="mb-2.5 flex items-center justify-between gap-3">
+        <h3 class="text-[19px] font-extrabold leading-tight tracking-tight text-ink">
+          {{ event.title }}
+        </h3>
+        <UiBadge :variant="event.status === 'published' ? 'accent' : 'muted'">
+          {{ event.status }}
+        </UiBadge>
+      </div>
+
+      <div class="mb-[18px] flex items-center gap-[7px] text-sm text-muted">
+        <i class="pi pi-calendar text-[13px]" /> {{ formatDate(event.startsAt) }}
+      </div>
+      <div v-if="event.location" class="mb-[18px] flex items-center gap-[7px] text-sm text-muted">
+        <i class="pi pi-map-marker text-[13px]" /> {{ event.location }}
+      </div>
+
+      <div class="flex gap-[22px] text-sm text-muted">
+        <span
+          ><b class="font-bold text-ink">{{ event.guestsCount }}</b> guests</span
+        >
+        <span
+          ><b class="font-bold text-ink">{{ event.checkedInCount }}</b> checked in</span
+        >
+      </div>
+    </Link>
   </div>
+
+  <UiEmpty
+    v-else
+    icon="pi-calendar-plus"
+    title="No events yet"
+    description="Create your first event to start inviting guests."
+  >
+    <UiButton href="/events/create" icon="pi-plus">Create event</UiButton>
+  </UiEmpty>
 </template>

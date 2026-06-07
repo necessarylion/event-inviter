@@ -1,0 +1,84 @@
+/* ===========================================================================
+   🎨  BRAND TOKENS  —  the ONE place that controls the brand across the app
+   ---------------------------------------------------------------------------
+   Shared by BOTH:
+     • the Inertia app  (imported by theme.css → app.css, exposed to Tailwind)
+     • the Edge landing (loaded via @vite in resources/views/pages/home.edge)
+
+   Edit the brand colour / fonts here and the marketing site, the portal, and
+   every Tailwind utility re-theme together. Plain CSS only (no Tailwind rules)
+   so the Edge page can load it directly.
+   =========================================================================== */
+
+:root {
+  /* === BRAND COLOUR (emerald by default) ================================= */
+  --accent-50: #ecfdf5;
+  --accent-100: #d1fae5;
+  --accent-200: #a7f3d0;
+  --accent-400: #34d399;
+  --accent-500: #10b981; /* ← main brand colour */
+  --accent-600: #059669;
+  --accent-700: #047857;
+  --accent-contrast: #ffffff; /* text/icon colour on top of the brand colour */
+
+  /* === FONTS ============================================================= */
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* --- Landing aliases ---------------------------------------------------
+     The Edge marketing page is written against the original PrimeVue token
+     names (--p-emerald-*, --p-font-*). Point them at the brand tokens above so
+     it follows the same knob. */
+  --p-emerald-50: var(--accent-50);
+  --p-emerald-100: var(--accent-100);
+  --p-emerald-200: var(--accent-200);
+  --p-emerald-300: var(--accent-400);
+  --p-emerald-400: var(--accent-400);
+  --p-emerald-500: var(--accent-500);
+  --p-emerald-600: var(--accent-600);
+  --p-emerald-700: var(--accent-700);
+  --p-emerald-800: var(--accent-700);
+  --p-emerald-900: var(--accent-700);
+  --p-emerald-950: var(--accent-700);
+  --p-font-sans: var(--font-sans);
+  --p-font-mono: var(--font-mono);
+}
+
+/* ===========================================================================
+   Accent presets — flip the whole brand colour with one attribute:
+   <html data-accent="violet">  ·  "rose"  ·  "sky"
+   =========================================================================== */
+[data-accent='violet'] {
+  --accent-50: #f5f3ff;
+  --accent-100: #ede9fe;
+  --accent-200: #ddd6fe;
+  --accent-400: #a78bfa;
+  --accent-500: #8b5cf6;
+  --accent-600: #7c3aed;
+  --accent-700: #6d28d9;
+}
+[data-accent='rose'] {
+  --accent-50: #fff1f2;
+  --accent-100: #ffe4e6;
+  --accent-200: #fecdd3;
+  --accent-400: #fb7185;
+  --accent-500: #f43f5e;
+  --accent-600: #e11d48;
+  --accent-700: #be123c;
+}
+[data-accent='sky'] {
+  --accent-50: #f0f9ff;
+  --accent-100: #e0f2fe;
+  --accent-200: #bae6fd;
+  --accent-400: #38bdf8;
+  --accent-500: #0ea5e9;
+  --accent-600: #0284c7;
+  --accent-700: #0369a1;
+}
+
+/* On a dark surface the brand colour needs darker text/icons for contrast. */
+[data-theme='dark'] {
+  --accent-contrast: #06231a;
+}

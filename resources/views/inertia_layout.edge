@@ -1,11 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title inertia>
       AdonisJS
     </title>
+
+    {{-- Apply the saved theme before paint to avoid a flash --}}
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('ei-theme')
+          if (t) document.documentElement.setAttribute('data-theme', t)
+          var a = localStorage.getItem('ei-accent')
+          if (a && a !== 'emerald') document.documentElement.setAttribute('data-accent', a)
+        } catch (e) {}
+      })()
+    </script>
 
     @vite(['inertia/app.ts'])
     @inertiaHead()

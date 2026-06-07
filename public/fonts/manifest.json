@@ -1,0 +1,392 @@
+[
+  {
+    "name": "Great Vibes",
+    "file": "GreatVibes.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Dancing Script",
+    "file": "DancingScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Parisienne",
+    "file": "Parisienne.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Sacramento",
+    "file": "Sacramento.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Allura",
+    "file": "Allura.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Alex Brush",
+    "file": "AlexBrush.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Tangerine",
+    "file": "Tangerine.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Pinyon Script",
+    "file": "PinyonScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Mr De Haviland",
+    "file": "MrDeHaviland.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Petit Formal Script",
+    "file": "PetitFormalScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Pacifico",
+    "file": "Pacifico.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Satisfy",
+    "file": "Satisfy.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Cookie",
+    "file": "Cookie.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Yellowtail",
+    "file": "Yellowtail.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Kaushan Script",
+    "file": "KaushanScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Marck Script",
+    "file": "MarckScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Herr Von Muellerhoff",
+    "file": "HerrVonMuellerhoff.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Rouge Script",
+    "file": "RougeScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Italianno",
+    "file": "Italianno.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Niconne",
+    "file": "Niconne.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Lobster",
+    "file": "Lobster.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Courgette",
+    "file": "Courgette.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Damion",
+    "file": "Damion.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Qwigley",
+    "file": "Qwigley.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Norican",
+    "file": "Norican.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Engagement",
+    "file": "Engagement.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Clicker Script",
+    "file": "ClickerScript.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Birthstone",
+    "file": "Birthstone.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Bilbo Swash Caps",
+    "file": "BilboSwashCaps.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Mr Dafoe",
+    "file": "MrDafoe.ttf",
+    "category": "Script",
+    "fallback": false
+  },
+  {
+    "name": "Playfair Display",
+    "file": "PlayfairDisplay.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Cormorant Garamond",
+    "file": "CormorantGaramond.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "EB Garamond",
+    "file": "EBGaramond.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Cinzel",
+    "file": "Cinzel.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Cinzel Decorative",
+    "file": "CinzelDecorative.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Libre Baskerville",
+    "file": "LibreBaskerville.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Cardo",
+    "file": "Cardo.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Lora",
+    "file": "Lora.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Marcellus",
+    "file": "Marcellus.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Marcellus SC",
+    "file": "MarcellusSC.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Prata",
+    "file": "Prata.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Bodoni Moda",
+    "file": "BodoniModa.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Tenor Sans",
+    "file": "TenorSans.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Spectral",
+    "file": "Spectral.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Italiana",
+    "file": "Italiana.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Gilda Display",
+    "file": "GildaDisplay.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Bellefair",
+    "file": "Bellefair.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Forum",
+    "file": "Forum.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Cormorant",
+    "file": "Cormorant.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Della Respira",
+    "file": "DellaRespira.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Yeseva One",
+    "file": "YesevaOne.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Abril Fatface",
+    "file": "AbrilFatface.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Fraunces",
+    "file": "Fraunces.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Crimson Text",
+    "file": "CrimsonText.ttf",
+    "category": "Serif",
+    "fallback": false
+  },
+  {
+    "name": "Montserrat",
+    "file": "Montserrat.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Josefin Sans",
+    "file": "JosefinSans.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Raleway",
+    "file": "Raleway.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Poppins",
+    "file": "Poppins.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Quicksand",
+    "file": "Quicksand.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Jost",
+    "file": "Jost.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Questrial",
+    "file": "Questrial.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Work Sans",
+    "file": "WorkSans.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Nunito",
+    "file": "Nunito.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Archivo",
+    "file": "Archivo.ttf",
+    "category": "Sans",
+    "fallback": false
+  },
+  {
+    "name": "Roboto",
+    "file": "Roboto.ttf",
+    "category": "Sans",
+    "fallback": true
+  }
+]

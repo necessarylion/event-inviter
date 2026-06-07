@@ -100,7 +100,7 @@ export default class EmailSettingsController {
         }
         message
           .to(user.email)
-          .subject('Test email from Event Inviter')
+          .subject('Test email from Guest Invite')
           .html('<p>✅ Your email settings are working. You can now send invitations.</p>')
       })
 

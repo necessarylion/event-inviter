@@ -6,15 +6,12 @@ import CardTemplate from '#models/card_template'
 import mailerFactory from '#services/mailer_factory'
 import cardRenderService from '#services/card_render_service'
 import invitationService from '#services/invitation_service'
+import type { Template } from '@pdfme/common'
 import type { HttpContext } from '@adonisjs/core/http'
-import type { CardDesign } from '#models/card_template'
-
-const DEFAULT_WIDTH = 600
-const DEFAULT_HEIGHT = 840
 
 export default class CardController {
   /**
-   * The card designer page.
+   * The pdfme card designer page.
    */
   async design({ params, auth, inertia, response }: HttpContext) {
     const event = await this.findOwnedEvent(auth.user!.id, params.eventId)
@@ -22,23 +19,17 @@ export default class CardController {
       return response.notFound('Event not found')
     }
 
-    const template = await CardTemplate.findBy('eventId', event.id)
+    const existing = await CardTemplate.findBy('eventId', event.id)
+    const sampleQrUrl = invitationService.inviteUrl('SAMPLE')
 
     return inertia.render('events/card_designer', {
       event: { id: event.id, title: event.title },
-      template: {
-        name: template?.name ?? 'Invitation card',
-        width: template?.width ?? DEFAULT_WIDTH,
-        height: template?.height ?? DEFAULT_HEIGHT,
-        design: template ? template.design : defaultDesign(event.title),
-      },
-      // A real QR (sample token) so the editor preview looks accurate.
-      sampleQrUrl: invitationService.inviteUrl('SAMPLE'),
+      template: existing ? existing.template : defaultTemplate(event.title, sampleQrUrl),
     })
   }
 
   /**
-   * Persist the design. Enforces that a QR element is present (it's mandatory).
+   * Persist the pdfme template. Enforces that a QR code field is present.
    */
   async save({ params, request, auth, response, session }: HttpContext) {
     const event = await this.findOwnedEvent(auth.user!.id, params.eventId)
@@ -46,23 +37,31 @@ export default class CardController {
       return response.notFound('Event not found')
     }
 
-    const name = String(request.input('name', 'Invitation card')).slice(0, 120)
-    const width = Number(request.input('width', DEFAULT_WIDTH))
-    const height = Number(request.input('height', DEFAULT_HEIGHT))
-    const design = request.input('design') as CardDesign | undefined
+    const raw = request.input('template')
+    let template: Template | undefined
+    try {
+      template = (typeof raw === 'string' ? JSON.parse(raw) : raw) as Template
+    } catch {
+      template = undefined
+    }
 
-    if (
-      !design ||
-      !Array.isArray(design.elements) ||
-      !design.elements.some((e) => e.type === 'qr')
-    ) {
-      session.flash('error', 'The card must include the QR code element.')
+    const schemas = template?.schemas ?? []
+    const hasQr = schemas.some((page) => page.some((schema) => schema.type === 'qrcode'))
+
+    if (!template || !hasQr) {
+      session.flash('error', 'The card must include a QR code field.')
       return response.redirect().back()
     }
 
+    const basePdf = template.basePdf as { width?: number; height?: number } | string
+    const dimensions =
+      typeof basePdf === 'object' && basePdf.width && basePdf.height
+        ? { width: Math.round(basePdf.width), height: Math.round(basePdf.height) }
+        : {}
+
     await CardTemplate.updateOrCreate(
       { eventId: event.id },
-      { eventId: event.id, name, width, height, designJson: design }
+      { eventId: event.id, name: 'Invitation card', designJson: template, ...dimensions }
     )
 
     session.flash('success', 'Card design saved.')
@@ -70,7 +69,9 @@ export default class CardController {
   }
 
   /**
-   * Download a guest's personalized card as a PDF.
+   * Serve a guest's personalized card as a PDF. The browser rasterizes it to a
+   * PNG for download (see use_card_image) — keeping the slow PDF→image step off
+   * the server for the interactive path.
    */
   async generate({ params, auth, response, session }: HttpContext) {
     const found = await this.findOwnedGuest(auth.user!.id, params.eventId, params.guestId)
@@ -85,18 +86,23 @@ export default class CardController {
       return response.redirect().toRoute('cards.design', { eventId: event.id })
     }
 
-    const pdf = await this.renderForGuest(template, guest)
+    const invitation = await invitationService.forGuest(guest, 'card')
+    const pdf = await cardRenderService.toPdf(
+      template,
+      invitationService.inviteUrl(invitation.token),
+      this.fieldsFor(event, guest)
+    )
 
     response.header('Content-Type', 'application/pdf')
     response.header(
       'Content-Disposition',
-      `attachment; filename="invitation-${event.id}-${guest.id}.pdf"`
+      `inline; filename="invitation-${event.id}-${guest.id}.pdf"`
     )
     return response.send(Buffer.from(pdf))
   }
 
   /**
-   * Email a guest their personalized card as a PDF attachment.
+   * Email a guest their personalized card as a PNG image attachment.
    */
   async emailCard({ params, auth, response, session }: HttpContext) {
     const user = auth.user!
@@ -118,9 +124,10 @@ export default class CardController {
     }
 
     const invitation = await invitationService.forGuest(guest, 'card')
-    const pdf = await cardRenderService.toPdf(
+    const png = await cardRenderService.toPng(
       template,
-      invitationService.inviteUrl(invitation.token)
+      invitationService.inviteUrl(invitation.token),
+      this.fieldsFor(event, guest)
     )
 
     try {
@@ -135,9 +142,9 @@ export default class CardController {
           .html(
             '<p>Your personalized invitation card is attached. Show its QR code at the door.</p>'
           )
-        message.attachData(Buffer.from(pdf), {
-          filename: 'invitation.pdf',
-          contentType: 'application/pdf',
+        message.attachData(Buffer.from(png), {
+          filename: 'invitation.png',
+          contentType: 'image/png',
         })
       })
       invitation.status = 'sent'
@@ -153,9 +160,18 @@ export default class CardController {
     return response.redirect().toRoute('events.show', { id: event.id })
   }
 
-  private async renderForGuest(template: CardTemplate, guest: Guest) {
-    const invitation = await invitationService.forGuest(guest, 'card')
-    return cardRenderService.toPdf(template, invitationService.inviteUrl(invitation.token))
+  /**
+   * Text-field values injected into the template per guest. Keys that don't
+   * match a field in the template are ignored by pdfme.
+   */
+  private fieldsFor(event: Event, guest: Guest) {
+    return {
+      eventTitle: event.title,
+      guestName: guest.name,
+      eventDate: event.startsAt
+        ? event.startsAt.setZone(event.timezone || 'UTC').toFormat('cccc, dd LLL yyyy • t')
+        : '',
+    }
   }
 
   private findOwnedEvent(userId: number, eventId: number | string) {
@@ -173,50 +189,78 @@ export default class CardController {
 }
 
 /**
- * Starter design for events that have not been customized yet.
+ * Starter pdfme template (A6 portrait, millimetres) used until the organizer
+ * customizes their card. Contains the required QR code field.
  */
-function defaultDesign(title: string): CardDesign {
+function defaultTemplate(title: string, sampleQr: string): Template {
   return {
-    background: '#111827',
-    elements: [
-      { id: 'bg-band', type: 'rect', x: 40, y: 40, width: 520, height: 760, fill: '#1f2937' },
-      {
-        id: 'eyebrow',
-        type: 'text',
-        x: 60,
-        y: 90,
-        width: 480,
-        fontSize: 22,
-        fill: '#9ca3af',
-        align: 'center',
-        bold: false,
-        text: "YOU'RE INVITED",
-      },
-      {
-        id: 'title',
-        type: 'text',
-        x: 60,
-        y: 140,
-        width: 480,
-        fontSize: 40,
-        fill: '#ffffff',
-        align: 'center',
-        bold: true,
-        text: title,
-      },
-      { id: 'qr', type: 'qr', x: 200, y: 460, size: 200 },
-      {
-        id: 'qr-label',
-        type: 'text',
-        x: 60,
-        y: 690,
-        width: 480,
-        fontSize: 18,
-        fill: '#9ca3af',
-        align: 'center',
-        bold: false,
-        text: 'Scan at the entrance',
-      },
+    basePdf: { width: 105, height: 148, padding: [0, 0, 0, 0] },
+    schemas: [
+      [
+        {
+          name: 'eyebrow',
+          type: 'text',
+          content: "YOU'RE INVITED",
+          position: { x: 10, y: 12 },
+          width: 85,
+          height: 6,
+          fontSize: 9,
+          alignment: 'center',
+          characterSpacing: 1,
+          fontColor: '#888888',
+        },
+        {
+          name: 'eventTitle',
+          type: 'text',
+          content: title,
+          position: { x: 10, y: 20 },
+          width: 85,
+          height: 14,
+          fontSize: 20,
+          alignment: 'center',
+        },
+        {
+          name: 'guestName',
+          type: 'text',
+          content: 'Guest name',
+          position: { x: 10, y: 40 },
+          width: 85,
+          height: 8,
+          fontSize: 12,
+          alignment: 'center',
+          fontColor: '#555555',
+        },
+        {
+          name: 'eventDate',
+          type: 'text',
+          content: 'Event date',
+          position: { x: 10, y: 50 },
+          width: 85,
+          height: 6,
+          fontSize: 9,
+          alignment: 'center',
+          fontColor: '#888888',
+        },
+        {
+          name: 'qr',
+          type: 'qrcode',
+          content: sampleQr,
+          position: { x: 37.5, y: 66 },
+          width: 30,
+          height: 30,
+        },
+        {
+          name: 'qrLabel',
+          type: 'text',
+          content: 'Scan at the entrance',
+          position: { x: 10, y: 100 },
+          width: 85,
+          height: 6,
+          fontSize: 9,
+          alignment: 'center',
+          fontColor: '#888888',
+        },
+      ],
     ],
   }
 }

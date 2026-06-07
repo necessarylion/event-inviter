@@ -15,7 +15,7 @@ const mailConfig = defineConfig({
    */
   from: {
     address: env.get('MAIL_FROM_ADDRESS', 'no-reply@event-inviter.test'),
-    name: env.get('MAIL_FROM_NAME', 'Event Inviter'),
+    name: env.get('MAIL_FROM_NAME', 'Guest Invite'),
   },
 
   /**

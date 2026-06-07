@@ -6,6 +6,7 @@
  */
 /* eslint-disable vue/no-mutating-props */
 import type { InertiaForm } from '@inertiajs/vue3'
+import { UiField, UiInput, UiTextarea, UiSelect, UiCheckbox } from '~/components/ui'
 
 interface EventFormData {
   title: string
@@ -24,82 +25,68 @@ defineProps<{ form: InertiaForm<EventFormData> }>()
 </script>
 
 <template>
-  <div class="field">
-    <label for="title">Event title</label>
-    <input
-      id="title"
-      v-model="form.title"
-      type="text"
-      :data-invalid="form.errors.title ? 'true' : undefined"
-    />
-    <div v-if="form.errors.title">{{ form.errors.title }}</div>
-  </div>
+  <div class="flex flex-col gap-[18px]">
+    <UiField label="Event title" for="title" :error="form.errors.title">
+      <UiInput id="title" v-model="form.title" :invalid="!!form.errors.title" />
+    </UiField>
 
-  <div class="field">
-    <label for="description">Description</label>
-    <textarea id="description" v-model="form.description" />
-    <div v-if="form.errors.description">{{ form.errors.description }}</div>
-  </div>
+    <UiField label="Description" for="description" optional :error="form.errors.description">
+      <UiTextarea id="description" v-model="form.description" />
+    </UiField>
 
-  <div class="form-grid">
-    <div class="field">
-      <label for="startsAt">Starts at</label>
-      <input
-        id="startsAt"
-        v-model="form.startsAt"
-        type="datetime-local"
-        :data-invalid="form.errors.startsAt ? 'true' : undefined"
+    <div class="grid gap-[18px] sm:grid-cols-2">
+      <UiField label="Starts at" for="startsAt" :error="form.errors.startsAt">
+        <UiInput
+          id="startsAt"
+          v-model="form.startsAt"
+          type="datetime-local"
+          :invalid="!!form.errors.startsAt"
+        />
+      </UiField>
+      <UiField label="Ends at" for="endsAt" optional :error="form.errors.endsAt">
+        <UiInput id="endsAt" v-model="form.endsAt" type="datetime-local" />
+      </UiField>
+    </div>
+
+    <div class="grid gap-[18px] sm:grid-cols-2">
+      <UiField label="Location name" for="location" optional>
+        <UiInput id="location" v-model="form.location" />
+      </UiField>
+      <UiField label="Timezone" for="timezone">
+        <UiInput id="timezone" v-model="form.timezone" />
+      </UiField>
+    </div>
+
+    <UiField label="Venue address" for="venueAddress" optional>
+      <UiInput id="venueAddress" v-model="form.venueAddress" />
+    </UiField>
+
+    <UiField
+      label="Cover image URL"
+      for="coverImageUrl"
+      optional
+      :error="form.errors.coverImageUrl"
+    >
+      <UiInput
+        id="coverImageUrl"
+        v-model="form.coverImageUrl"
+        type="url"
+        :invalid="!!form.errors.coverImageUrl"
       />
-      <div v-if="form.errors.startsAt">{{ form.errors.startsAt }}</div>
-    </div>
-    <div class="field">
-      <label for="endsAt">Ends at <span class="muted">(optional)</span></label>
-      <input id="endsAt" v-model="form.endsAt" type="datetime-local" />
-      <div v-if="form.errors.endsAt">{{ form.errors.endsAt }}</div>
-    </div>
-  </div>
+    </UiField>
 
-  <div class="form-grid">
-    <div class="field">
-      <label for="location">Location name <span class="muted">(optional)</span></label>
-      <input id="location" v-model="form.location" type="text" />
-    </div>
-    <div class="field">
-      <label for="timezone">Timezone</label>
-      <input id="timezone" v-model="form.timezone" type="text" />
-    </div>
-  </div>
-
-  <div class="field">
-    <label for="venueAddress">Venue address <span class="muted">(optional)</span></label>
-    <input id="venueAddress" v-model="form.venueAddress" type="text" />
-  </div>
-
-  <div class="field">
-    <label for="coverImageUrl">Cover image URL <span class="muted">(optional)</span></label>
-    <input
-      id="coverImageUrl"
-      v-model="form.coverImageUrl"
-      type="url"
-      :data-invalid="form.errors.coverImageUrl ? 'true' : undefined"
-    />
-    <div v-if="form.errors.coverImageUrl">{{ form.errors.coverImageUrl }}</div>
-  </div>
-
-  <div class="form-grid">
-    <div class="field">
-      <label for="status">Status</label>
-      <select id="status" v-model="form.status">
-        <option value="draft">Draft</option>
-        <option value="published">Published</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Public RSVP</label>
-      <label class="row" style="font-weight: 400">
-        <input v-model="form.allowPublicRsvp" type="checkbox" style="width: auto; height: auto" />
-        Allow guests to RSVP from the invite link
-      </label>
+    <div class="grid items-start gap-[18px] sm:grid-cols-2">
+      <UiField label="Status" for="status">
+        <UiSelect id="status" v-model="form.status">
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+        </UiSelect>
+      </UiField>
+      <UiField label="Public RSVP">
+        <UiCheckbox v-model="form.allowPublicRsvp">
+          Allow guests to RSVP from the invite link
+        </UiCheckbox>
+      </UiField>
     </div>
   </div>
 </template>

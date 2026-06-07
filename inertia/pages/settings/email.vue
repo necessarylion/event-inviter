@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import { Head, router, useForm } from '@inertiajs/vue3'
+import {
+  UiButton,
+  UiCard,
+  UiField,
+  UiInput,
+  UiSelect,
+  UiCheckbox,
+  UiBadge,
+  UiPageHeader,
+} from '~/components/ui'
 
 type Setting = {
   provider: string
@@ -54,152 +64,126 @@ function formatDate(iso: string | null) {
 <template>
   <Head title="Email settings" />
 
-  <div class="page" style="max-width: 680px">
-    <div class="page-header">
-      <div>
-        <h1>Email settings</h1>
-        <p>
-          Send invitations from your own email provider. Leave this blank to use the system default.
-        </p>
-      </div>
-      <span
-        v-if="setting"
-        class="badge"
-        :class="setting.isVerified ? 'badge-success' : 'badge-warn'"
-      >
-        {{ setting.isVerified ? 'Verified' : 'Not verified' }}
-      </span>
-    </div>
+  <div class="mx-auto max-w-[680px]">
+    <UiPageHeader
+      title="Email settings"
+      subtitle="Send invitations from your own email provider. Leave blank to use the system default."
+    >
+      <template #actions>
+        <UiBadge v-if="setting" :variant="setting.isVerified ? 'accent' : 'warn'">
+          {{ setting.isVerified ? 'Verified' : 'Not verified' }}
+        </UiBadge>
+      </template>
+    </UiPageHeader>
 
-    <form @submit.prevent="save">
-      <div class="field">
-        <label for="provider">Provider</label>
-        <select id="provider" v-model="form.provider">
-          <option value="smtp">SMTP</option>
-          <option value="resend">Resend</option>
-          <option value="ses">Amazon SES</option>
-        </select>
-      </div>
+    <UiCard>
+      <form class="flex flex-col gap-[18px]" @submit.prevent="save">
+        <UiField label="Provider" for="provider">
+          <UiSelect id="provider" v-model="form.provider">
+            <option value="smtp">SMTP</option>
+            <option value="resend">Resend</option>
+            <option value="ses">Amazon SES</option>
+          </UiSelect>
+        </UiField>
 
-      <div class="form-grid" style="margin-top: 20px">
-        <div class="field">
-          <label for="fromEmail">From email</label>
-          <input
-            id="fromEmail"
-            v-model="form.fromEmail"
-            type="email"
-            :data-invalid="form.errors.fromEmail ? 'true' : undefined"
-          />
-          <div v-if="form.errors.fromEmail">{{ form.errors.fromEmail }}</div>
-        </div>
-        <div class="field">
-          <label for="fromName">From name <span class="muted">(optional)</span></label>
-          <input id="fromName" v-model="form.fromName" type="text" />
-        </div>
-      </div>
-
-      <!-- SMTP -->
-      <template v-if="form.provider === 'smtp'">
-        <div class="form-grid" style="margin-top: 20px">
-          <div class="field">
-            <label for="host">SMTP host</label>
-            <input
-              id="host"
-              v-model="form.host"
-              type="text"
-              :data-invalid="form.errors.host ? 'true' : undefined"
+        <div class="grid gap-[18px] sm:grid-cols-2">
+          <UiField label="From email" for="fromEmail" :error="form.errors.fromEmail">
+            <UiInput
+              id="fromEmail"
+              v-model="form.fromEmail"
+              type="email"
+              :invalid="!!form.errors.fromEmail"
             />
-            <div v-if="form.errors.host">{{ form.errors.host }}</div>
-          </div>
-          <div class="field">
-            <label for="port">Port</label>
-            <input
-              id="port"
-              v-model.number="form.port"
-              type="number"
-              :data-invalid="form.errors.port ? 'true' : undefined"
-            />
-            <div v-if="form.errors.port">{{ form.errors.port }}</div>
-          </div>
+          </UiField>
+          <UiField label="From name" for="fromName" optional>
+            <UiInput id="fromName" v-model="form.fromName" />
+          </UiField>
         </div>
-        <div class="form-grid" style="margin-top: 20px">
-          <div class="field">
-            <label for="username">Username <span class="muted">(optional)</span></label>
-            <input id="username" v-model="form.username" type="text" autocomplete="off" />
+
+        <!-- SMTP -->
+        <template v-if="form.provider === 'smtp'">
+          <div class="grid gap-[18px] sm:grid-cols-2">
+            <UiField label="SMTP host" for="host" :error="form.errors.host">
+              <UiInput id="host" v-model="form.host" :invalid="!!form.errors.host" />
+            </UiField>
+            <UiField label="Port" for="port" :error="form.errors.port">
+              <UiInput
+                id="port"
+                v-model.number="form.port"
+                type="number"
+                :invalid="!!form.errors.port"
+              />
+            </UiField>
           </div>
-          <div class="field">
-            <label for="password">Password</label>
-            <input
-              id="password"
-              v-model="form.password"
+          <div class="grid gap-[18px] sm:grid-cols-2">
+            <UiField label="Username" for="username" optional>
+              <UiInput id="username" v-model="form.username" autocomplete="off" />
+            </UiField>
+            <UiField label="Password" for="password">
+              <UiInput
+                id="password"
+                v-model="form.password"
+                type="password"
+                autocomplete="new-password"
+                :placeholder="secretPlaceholder"
+              />
+            </UiField>
+          </div>
+          <UiCheckbox v-model="form.secure">Use TLS/SSL (secure connection)</UiCheckbox>
+        </template>
+
+        <!-- Resend -->
+        <template v-else-if="form.provider === 'resend'">
+          <UiField label="Resend API key" for="apiKey" :error="form.errors.apiKey">
+            <UiInput
+              id="apiKey"
+              v-model="form.apiKey"
               type="password"
-              autocomplete="new-password"
+              autocomplete="off"
+              :placeholder="secretPlaceholder"
+              :invalid="!!form.errors.apiKey"
+            />
+          </UiField>
+        </template>
+
+        <!-- SES -->
+        <template v-else-if="form.provider === 'ses'">
+          <div class="grid gap-[18px] sm:grid-cols-2">
+            <UiField label="AWS region" for="region" :error="form.errors.region">
+              <UiInput
+                id="region"
+                v-model="form.region"
+                placeholder="us-east-1"
+                :invalid="!!form.errors.region"
+              />
+            </UiField>
+            <UiField label="Access key ID" for="accessKeyId">
+              <UiInput id="accessKeyId" v-model="form.accessKeyId" autocomplete="off" />
+            </UiField>
+          </div>
+          <UiField label="Secret access key" for="secretAccessKey">
+            <UiInput
+              id="secretAccessKey"
+              v-model="form.secretAccessKey"
+              type="password"
+              autocomplete="off"
               :placeholder="secretPlaceholder"
             />
-          </div>
-        </div>
-        <label class="row" style="margin-top: 16px; font-weight: 400">
-          <input v-model="form.secure" type="checkbox" style="width: auto; height: auto" />
-          Use TLS/SSL (secure connection)
-        </label>
-      </template>
+          </UiField>
+        </template>
 
-      <!-- Resend -->
-      <template v-else-if="form.provider === 'resend'">
-        <div class="field" style="margin-top: 20px">
-          <label for="apiKey">Resend API key</label>
-          <input
-            id="apiKey"
-            v-model="form.apiKey"
-            type="password"
-            autocomplete="off"
-            :placeholder="secretPlaceholder"
-            :data-invalid="form.errors.apiKey ? 'true' : undefined"
-          />
-          <div v-if="form.errors.apiKey">{{ form.errors.apiKey }}</div>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          <UiButton type="submit" :loading="form.processing" icon="pi-check"
+            >Save settings</UiButton
+          >
+          <UiButton v-if="setting" variant="secondary" icon="pi-send" @click="sendTest"
+            >Send test email</UiButton
+          >
+          <span v-if="setting?.lastTestedAt" class="text-sm text-muted">
+            Last tested {{ formatDate(setting.lastTestedAt) }}
+          </span>
         </div>
-      </template>
-
-      <!-- SES -->
-      <template v-else-if="form.provider === 'ses'">
-        <div class="form-grid" style="margin-top: 20px">
-          <div class="field">
-            <label for="region">AWS region</label>
-            <input
-              id="region"
-              v-model="form.region"
-              type="text"
-              placeholder="us-east-1"
-              :data-invalid="form.errors.region ? 'true' : undefined"
-            />
-            <div v-if="form.errors.region">{{ form.errors.region }}</div>
-          </div>
-          <div class="field">
-            <label for="accessKeyId">Access key ID</label>
-            <input id="accessKeyId" v-model="form.accessKeyId" type="text" autocomplete="off" />
-          </div>
-        </div>
-        <div class="field" style="margin-top: 20px">
-          <label for="secretAccessKey">Secret access key</label>
-          <input
-            id="secretAccessKey"
-            v-model="form.secretAccessKey"
-            type="password"
-            autocomplete="off"
-            :placeholder="secretPlaceholder"
-          />
-        </div>
-      </template>
-
-      <div class="row" style="margin-top: 28px">
-        <button type="submit" class="btn" :disabled="form.processing">Save settings</button>
-        <button v-if="setting" type="button" class="btn btn-secondary" @click="sendTest">
-          Send test email
-        </button>
-        <span v-if="setting?.lastTestedAt" class="muted">
-          Last tested {{ formatDate(setting.lastTestedAt) }}
-        </span>
-      </div>
-    </form>
+      </form>
+    </UiCard>
   </div>
 </template>
