@@ -49,20 +49,25 @@ const { isDark, accent, sync } = useTheme()
 const plain = (t: any): any => JSON.parse(JSON.stringify(t))
 
 /**
- * pdfme renders its UI with Ant Design, so we hand the Designer an antd theme
- * config: the dark/light algorithm follows the app's `data-theme`, and the
- * primary colour is pulled from the live `--accent-500` token so the editor
- * chrome matches the current theme + accent. Re-applied via `updateOptions`
- * whenever either changes.
+ * pdfme renders its UI with Ant Design, so we hand the Designer an antd token
+ * set: dark mode follows the app's `data-theme` and the primary colour is pulled
+ * from the live `--accent-500` token so the editor chrome matches the current
+ * theme + accent. Re-applied via `updateOptions` whenever either changes.
+ *
+ * pdfme deep-clones its options with `structuredClone`, which throws on
+ * functions — so we can't pass antd's `algorithm`. Instead we pre-compute the
+ * dark token set with `getDesignToken()` (plain colour values) and pass that as
+ * token overrides; light mode just seeds the primary and uses pdfme's default.
  */
 function pdfmeTheme() {
-  const accentColor = getComputedStyle(document.documentElement)
+  const colorPrimary = getComputedStyle(document.documentElement)
     .getPropertyValue('--accent-500')
     .trim()
-  return {
-    algorithm: isDark.value ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-    token: accentColor ? { colorPrimary: accentColor } : {},
+  const token = colorPrimary ? { colorPrimary } : {}
+  if (isDark.value) {
+    return { token: antdTheme.getDesignToken({ algorithm: antdTheme.darkAlgorithm, token }) }
   }
+  return { token }
 }
 
 /**

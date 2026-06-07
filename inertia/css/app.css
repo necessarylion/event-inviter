@@ -339,3 +339,51 @@
     }
   }
 }
+
+/* ---- pdfme property panel (dark mode) ---------------------------------
+ * pdfme's right-hand "Edit Field" panel is rendered by form-render, which
+ * bundles its OWN Ant Design instance — one the Designer `theme` option can't
+ * reach (that option only themes pdfme's own antd copy: canvas, toolbar, left
+ * sidebar). So in dark mode this panel stays light. Re-skin its antd controls
+ * to our dark field tokens. Kept unlayered + !important to win over antd's
+ * injected (`:where()`, zero-specificity) styles. Scoped to the panel class so
+ * the rest of the app (which uses no antd) is untouched. */
+[data-theme='dark'] .pdfme-designer-right-sidebar :is(.ant-input, .ant-input-number, .ant-input-number-input, .ant-input-affix-wrapper, .ant-select-selector) {
+  background-color: var(--field-bg) !important;
+  border-color: var(--field-border) !important;
+  color: var(--field-text) !important;
+}
+[data-theme='dark'] .pdfme-designer-right-sidebar :is(.ant-input::placeholder, .ant-input-number-input::placeholder) {
+  color: var(--field-placeholder) !important;
+}
+[data-theme='dark'] .pdfme-designer-right-sidebar :is(.ant-form-item-label > label, .ant-select-selection-item, .ant-select-selection-placeholder, .ant-select-arrow, .ant-typography, .ant-input-number-handler-inner) {
+  color: var(--ink-2) !important;
+}
+[data-theme='dark'] .pdfme-designer-right-sidebar .ant-input-number-handler-wrap {
+  background-color: var(--field-bg) !important;
+}
+[data-theme='dark'] .pdfme-designer-right-sidebar .ant-input-number-handler {
+  border-color: var(--field-border) !important;
+}
+[data-theme='dark'] .pdfme-designer-right-sidebar .ant-checkbox-inner {
+  background-color: var(--field-bg) !important;
+  border-color: var(--field-border) !important;
+}
+[data-theme='dark'] .pdfme-designer-right-sidebar .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--accent-500) !important;
+  border-color: var(--accent-500) !important;
+}
+
+/* Select dropdowns / tooltips portal to <body>, outside the panel — but still
+ * under <html data-theme>, so style them globally for dark mode. */
+[data-theme='dark'] .ant-select-dropdown {
+  background-color: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+}
+[data-theme='dark'] .ant-select-dropdown .ant-select-item {
+  color: var(--ink-2) !important;
+}
+[data-theme='dark'] .ant-select-dropdown :is(.ant-select-item-option-active, .ant-select-item-option-selected) {
+  background-color: var(--bg-2) !important;
+  color: var(--ink) !important;
+}
