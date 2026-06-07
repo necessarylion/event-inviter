@@ -199,6 +199,39 @@ export class InvitationSchema extends BaseModel {
   declare viewedAt: DateTime | null
 }
 
+export class TemplatePresetSchema extends BaseModel {
+  static $columns = [
+    'createdAt',
+    'description',
+    'designJson',
+    'height',
+    'id',
+    'isPublished',
+    'name',
+    'updatedAt',
+    'width',
+  ] as const
+  $columns = TemplatePresetSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare description: string | null
+  @column()
+  declare designJson: any
+  @column()
+  declare height: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isPublished: boolean
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare width: number
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns

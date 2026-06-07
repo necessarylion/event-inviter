@@ -198,6 +198,48 @@ const routes = {
     tokens: [{"old":"/settings/email/test","type":0,"val":"settings","end":""},{"old":"/settings/email/test","type":0,"val":"email","end":""},{"old":"/settings/email/test","type":0,"val":"test","end":""}],
     types: placeholder as Registry['email_settings.test']['types'],
   },
+  'admin.templates.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/templates',
+    tokens: [{"old":"/admin/templates","type":0,"val":"admin","end":""},{"old":"/admin/templates","type":0,"val":"templates","end":""}],
+    types: placeholder as Registry['admin.templates.index']['types'],
+  },
+  'admin.templates.create': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/templates/new',
+    tokens: [{"old":"/admin/templates/new","type":0,"val":"admin","end":""},{"old":"/admin/templates/new","type":0,"val":"templates","end":""},{"old":"/admin/templates/new","type":0,"val":"new","end":""}],
+    types: placeholder as Registry['admin.templates.create']['types'],
+  },
+  'admin.templates.store': {
+    methods: ["POST"],
+    pattern: '/admin/templates',
+    tokens: [{"old":"/admin/templates","type":0,"val":"admin","end":""},{"old":"/admin/templates","type":0,"val":"templates","end":""}],
+    types: placeholder as Registry['admin.templates.store']['types'],
+  },
+  'admin.templates.edit': {
+    methods: ["GET","HEAD"],
+    pattern: '/admin/templates/:id/edit',
+    tokens: [{"old":"/admin/templates/:id/edit","type":0,"val":"admin","end":""},{"old":"/admin/templates/:id/edit","type":0,"val":"templates","end":""},{"old":"/admin/templates/:id/edit","type":1,"val":"id","end":""},{"old":"/admin/templates/:id/edit","type":0,"val":"edit","end":""}],
+    types: placeholder as Registry['admin.templates.edit']['types'],
+  },
+  'admin.templates.update': {
+    methods: ["PUT"],
+    pattern: '/admin/templates/:id',
+    tokens: [{"old":"/admin/templates/:id","type":0,"val":"admin","end":""},{"old":"/admin/templates/:id","type":0,"val":"templates","end":""},{"old":"/admin/templates/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['admin.templates.update']['types'],
+  },
+  'admin.templates.publish': {
+    methods: ["PUT"],
+    pattern: '/admin/templates/:id/publish',
+    tokens: [{"old":"/admin/templates/:id/publish","type":0,"val":"admin","end":""},{"old":"/admin/templates/:id/publish","type":0,"val":"templates","end":""},{"old":"/admin/templates/:id/publish","type":1,"val":"id","end":""},{"old":"/admin/templates/:id/publish","type":0,"val":"publish","end":""}],
+    types: placeholder as Registry['admin.templates.publish']['types'],
+  },
+  'admin.templates.destroy': {
+    methods: ["DELETE"],
+    pattern: '/admin/templates/:id',
+    tokens: [{"old":"/admin/templates/:id","type":0,"val":"admin","end":""},{"old":"/admin/templates/:id","type":0,"val":"templates","end":""},{"old":"/admin/templates/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['admin.templates.destroy']['types'],
+  },
 } as const satisfies Record<string, AdonisEndpoint>
 
 export { routes }

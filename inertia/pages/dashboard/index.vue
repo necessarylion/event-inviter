@@ -2,7 +2,7 @@
 import { DateTime } from 'luxon'
 import { Head } from '@inertiajs/vue3'
 import { Link } from '@adonisjs/inertia/vue'
-import { UiButton, UiBadge, UiEmpty, UiPageHeader } from '~/components/ui'
+import { UiButton, UiEmpty, UiPageHeader } from '~/components/ui'
 
 type EventRow = {
   id: number
@@ -50,9 +50,6 @@ function formatDate(iso: string | null) {
         <h3 class="text-[19px] font-extrabold leading-tight tracking-tight text-ink">
           {{ event.title }}
         </h3>
-        <UiBadge :variant="event.status === 'published' ? 'accent' : 'muted'">
-          {{ event.status }}
-        </UiBadge>
       </div>
 
       <div class="mb-[18px] flex items-center gap-[7px] text-sm text-muted">

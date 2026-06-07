@@ -3,10 +3,11 @@ import { DateTime } from 'luxon'
 import Event from '#models/event'
 import Guest from '#models/guest'
 import CardTemplate from '#models/card_template'
+import TemplatePreset from '#models/template_preset'
 import mailerFactory from '#services/mailer_factory'
 import cardRenderService from '#services/card_render_service'
+import cardTemplateService from '#services/card_template_service'
 import invitationService from '#services/invitation_service'
-import type { Template } from '@pdfme/common'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class CardController {
@@ -21,10 +22,18 @@ export default class CardController {
 
     const existing = await CardTemplate.findBy('eventId', event.id)
     const sampleQrUrl = invitationService.inviteUrl('SAMPLE')
+    const presets = await TemplatePreset.query().where('isPublished', true).orderBy('name', 'asc')
 
     return inertia.render('events/card_designer', {
       event: { id: event.id, title: event.title },
-      template: existing ? existing.template : defaultTemplate(event.title, sampleQrUrl),
+      template: existing
+        ? existing.template
+        : cardTemplateService.defaultTemplate(event.title, sampleQrUrl),
+      presets: presets.map((preset) => ({
+        id: preset.id,
+        name: preset.name,
+        template: preset.template,
+      })),
     })
   }
 
@@ -37,31 +46,20 @@ export default class CardController {
       return response.notFound('Event not found')
     }
 
-    const raw = request.input('template')
-    let template: Template | undefined
-    try {
-      template = (typeof raw === 'string' ? JSON.parse(raw) : raw) as Template
-    } catch {
-      template = undefined
-    }
-
-    const schemas = template?.schemas ?? []
-    const hasQr = schemas.some((page) => page.some((schema) => schema.type === 'qrcode'))
-
-    if (!template || !hasQr) {
+    const parsed = cardTemplateService.parseAndValidate(request.input('template'))
+    if (!parsed || !parsed.hasQr) {
       session.flash('error', 'The card must include a QR code field.')
       return response.redirect().back()
     }
 
-    const basePdf = template.basePdf as { width?: number; height?: number } | string
-    const dimensions =
-      typeof basePdf === 'object' && basePdf.width && basePdf.height
-        ? { width: Math.round(basePdf.width), height: Math.round(basePdf.height) }
-        : {}
-
     await CardTemplate.updateOrCreate(
       { eventId: event.id },
-      { eventId: event.id, name: 'Invitation card', designJson: template, ...dimensions }
+      {
+        eventId: event.id,
+        name: 'Invitation card',
+        designJson: parsed.template,
+        ...cardTemplateService.dimensions(parsed.template),
+      }
     )
 
     session.flash('success', 'Card design saved.')
@@ -185,82 +183,5 @@ export default class CardController {
     }
     const guest = await Guest.query().where('id', guestId).where('eventId', event.id).first()
     return guest ? { event, guest } : null
-  }
-}
-
-/**
- * Starter pdfme template (A6 portrait, millimetres) used until the organizer
- * customizes their card. Contains the required QR code field.
- */
-function defaultTemplate(title: string, sampleQr: string): Template {
-  return {
-    basePdf: { width: 105, height: 148, padding: [0, 0, 0, 0] },
-    schemas: [
-      [
-        {
-          name: 'eyebrow',
-          type: 'text',
-          content: "YOU'RE INVITED",
-          position: { x: 10, y: 12 },
-          width: 85,
-          height: 6,
-          fontSize: 9,
-          alignment: 'center',
-          characterSpacing: 1,
-          fontColor: '#888888',
-        },
-        {
-          name: 'eventTitle',
-          type: 'text',
-          content: title,
-          position: { x: 10, y: 20 },
-          width: 85,
-          height: 14,
-          fontSize: 20,
-          alignment: 'center',
-        },
-        {
-          name: 'guestName',
-          type: 'text',
-          content: 'Guest name',
-          position: { x: 10, y: 40 },
-          width: 85,
-          height: 8,
-          fontSize: 12,
-          alignment: 'center',
-          fontColor: '#555555',
-        },
-        {
-          name: 'eventDate',
-          type: 'text',
-          content: 'Event date',
-          position: { x: 10, y: 50 },
-          width: 85,
-          height: 6,
-          fontSize: 9,
-          alignment: 'center',
-          fontColor: '#888888',
-        },
-        {
-          name: 'qr',
-          type: 'qrcode',
-          content: sampleQr,
-          position: { x: 37.5, y: 66 },
-          width: 30,
-          height: 30,
-        },
-        {
-          name: 'qrLabel',
-          type: 'text',
-          content: 'Scan at the entrance',
-          position: { x: 10, y: 100 },
-          width: 85,
-          height: 6,
-          fontSize: 9,
-          alignment: 'center',
-          fontColor: '#888888',
-        },
-      ],
-    ],
   }
 }

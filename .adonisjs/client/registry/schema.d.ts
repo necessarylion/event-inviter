@@ -391,4 +391,88 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/email_settings_controller').default['test']>>>
     }
   }
+  'admin.templates.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/templates'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['index']>>>
+    }
+  }
+  'admin.templates.create': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/templates/new'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['create']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['create']>>>
+    }
+  }
+  'admin.templates.store': {
+    methods: ["POST"]
+    pattern: '/admin/templates'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/template_preset').createTemplatePresetValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/template_preset').createTemplatePresetValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin.templates.edit': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/templates/:id/edit'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['edit']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['edit']>>>
+    }
+  }
+  'admin.templates.update': {
+    methods: ["PUT"]
+    pattern: '/admin/templates/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/template_preset').updateTemplatePresetValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/template_preset').updateTemplatePresetValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin.templates.publish': {
+    methods: ["PUT"]
+    pattern: '/admin/templates/:id/publish'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['togglePublish']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['togglePublish']>>>
+    }
+  }
+  'admin.templates.destroy': {
+    methods: ["DELETE"]
+    pattern: '/admin/templates/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin_templates_controller').default['destroy']>>>
+    }
+  }
 }

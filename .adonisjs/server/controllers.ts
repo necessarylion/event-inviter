@@ -4,6 +4,7 @@
  */
 
 export const controllers = {
+  AdminTemplates: () => import('#controllers/admin_templates_controller'),
   Card: () => import('#controllers/card_controller'),
   CheckIns: () => import('#controllers/check_ins_controller'),
   Dashboard: () => import('#controllers/dashboard_controller'),

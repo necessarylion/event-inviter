@@ -12,7 +12,9 @@ const { isDark, sync, toggleDark } = useTheme()
 
 // Full-bleed pages hide the chrome and let their content own the whole viewport
 // (e.g. the card designer, which is a self-contained editor with its own toolbar).
-const isFullBleed = computed(() => page.component === 'events/card_designer')
+const isFullBleed = computed(() =>
+  ['events/card_designer', 'admin/templates/design'].includes(page.component)
+)
 
 onMounted(sync)
 
@@ -72,6 +74,18 @@ function isActive(prefix: string) {
             "
           >
             Email
+          </Link>
+          <Link
+            v-if="page.props.user?.isAdmin"
+            route="admin.templates.index"
+            class="rounded-[9px] px-3 py-2 text-[15px] font-medium no-underline transition-colors"
+            :class="
+              isActive('/admin')
+                ? 'bg-surface-2 text-ink'
+                : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
+            "
+          >
+            Templates
           </Link>
         </nav>
 

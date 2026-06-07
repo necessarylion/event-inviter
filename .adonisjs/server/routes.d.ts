@@ -36,6 +36,13 @@ export type ScannedRoutes = {
     'email_settings.edit': { paramsTuple?: []; params?: {} }
     'email_settings.update': { paramsTuple?: []; params?: {} }
     'email_settings.test': { paramsTuple?: []; params?: {} }
+    'admin.templates.index': { paramsTuple?: []; params?: {} }
+    'admin.templates.create': { paramsTuple?: []; params?: {} }
+    'admin.templates.store': { paramsTuple?: []; params?: {} }
+    'admin.templates.edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin.templates.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin.templates.publish': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin.templates.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   GET: {
     'home': { paramsTuple?: []; params?: {} }
@@ -52,6 +59,9 @@ export type ScannedRoutes = {
     'cards.design': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'cards.generate': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'guestId': ParamValue} }
     'email_settings.edit': { paramsTuple?: []; params?: {} }
+    'admin.templates.index': { paramsTuple?: []; params?: {} }
+    'admin.templates.create': { paramsTuple?: []; params?: {} }
+    'admin.templates.edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   HEAD: {
     'home': { paramsTuple?: []; params?: {} }
@@ -68,6 +78,9 @@ export type ScannedRoutes = {
     'cards.design': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'cards.generate': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'guestId': ParamValue} }
     'email_settings.edit': { paramsTuple?: []; params?: {} }
+    'admin.templates.index': { paramsTuple?: []; params?: {} }
+    'admin.templates.create': { paramsTuple?: []; params?: {} }
+    'admin.templates.edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   POST: {
     'invite.rsvp': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
@@ -82,16 +95,20 @@ export type ScannedRoutes = {
     'checkins.verify': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'cards.email': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'guestId': ParamValue} }
     'email_settings.test': { paramsTuple?: []; params?: {} }
+    'admin.templates.store': { paramsTuple?: []; params?: {} }
   }
   PUT: {
     'events.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'guests.update': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'id': ParamValue} }
     'cards.save': { paramsTuple: [ParamValue]; params: {'eventId': ParamValue} }
     'email_settings.update': { paramsTuple?: []; params?: {} }
+    'admin.templates.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin.templates.publish': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   DELETE: {
     'events.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'guests.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'eventId': ParamValue,'id': ParamValue} }
+    'admin.templates.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

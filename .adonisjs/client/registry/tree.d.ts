@@ -54,4 +54,15 @@ export interface ApiDefinition {
     update: typeof routes['email_settings.update']
     test: typeof routes['email_settings.test']
   }
+  admin: {
+    templates: {
+      index: typeof routes['admin.templates.index']
+      create: typeof routes['admin.templates.create']
+      store: typeof routes['admin.templates.store']
+      edit: typeof routes['admin.templates.edit']
+      update: typeof routes['admin.templates.update']
+      publish: typeof routes['admin.templates.publish']
+      destroy: typeof routes['admin.templates.destroy']
+    }
+  }
 }

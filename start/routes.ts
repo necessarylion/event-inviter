@@ -109,3 +109,27 @@ router
       .as('email_settings.test')
   })
   .use(middleware.auth())
+
+/*
+|--------------------------------------------------------------------------
+| Admin panel (system card templates) — auth + admin allowlist
+|--------------------------------------------------------------------------
+*/
+router
+  .group(() => {
+    router.get('templates', [controllers.AdminTemplates, 'index']).as('admin.templates.index')
+    router.get('templates/new', [controllers.AdminTemplates, 'create']).as('admin.templates.create')
+    router.post('templates', [controllers.AdminTemplates, 'store']).as('admin.templates.store')
+    router
+      .get('templates/:id/edit', [controllers.AdminTemplates, 'edit'])
+      .as('admin.templates.edit')
+    router.put('templates/:id', [controllers.AdminTemplates, 'update']).as('admin.templates.update')
+    router
+      .put('templates/:id/publish', [controllers.AdminTemplates, 'togglePublish'])
+      .as('admin.templates.publish')
+    router
+      .delete('templates/:id', [controllers.AdminTemplates, 'destroy'])
+      .as('admin.templates.destroy')
+  })
+  .prefix('admin')
+  .use([middleware.auth(), middleware.admin()])
