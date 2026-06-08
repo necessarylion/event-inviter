@@ -1,6 +1,8 @@
 import './css/app.css'
 import 'primeicons/primeicons.css'
 import 'vue-sonner/style.css'
+import '@vuepic/vue-datepicker/dist/main.css'
+import './css/datepicker.css'
 import { client } from '~/client'
 import Layout from '~/layouts/default.vue'
 import { createInertiaApp } from '@inertiajs/vue3'

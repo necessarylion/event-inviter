@@ -15,8 +15,11 @@ import {
   UiAvatar,
   UiPageHeader,
   UiTooltip,
+  UiMenu,
+  UiMenuItem,
 } from '~/components/ui'
 import { useCardImage } from '~/composables/use_card_image'
+import { confirm } from '~/composables/use_confirm'
 
 type GuestDraft = { name: string; email: string; phone: string }
 const emptyRow = (): GuestDraft => ({ name: '', email: '', phone: '' })
@@ -61,6 +64,7 @@ const canShareFiles = typeof navigator !== 'undefined' && !!navigator.canShare &
 
 const addOpen = ref(false)
 const guestForm = useForm<{ guests: GuestDraft[] }>({ guests: [emptyRow()] })
+const csvInput = ref<HTMLInputElement | null>(null)
 
 function openAddGuests() {
   guestForm.reset()
@@ -71,6 +75,109 @@ function openAddGuests() {
 
 function addRow() {
   guestForm.guests.push(emptyRow())
+}
+
+/**
+ * Parse CSV text into guest rows. Recognises a header row containing any of
+ * name/email/phone (in any order) and maps columns accordingly; otherwise
+ * falls back to positional columns (name, email, phone).
+ */
+function parseCsv(text: string): GuestDraft[] {
+  const rows = parseCsvRows(text).filter((cells) => cells.some((c) => c.trim() !== ''))
+  if (rows.length === 0) return []
+
+  const header = rows[0].map((c) => c.trim().toLowerCase())
+  const has = (k: string) => header.some((h) => h === k || h.startsWith(k))
+  let nameIdx = 0
+  let emailIdx = 1
+  let phoneIdx = 2
+  let body = rows
+
+  if (has('name') || has('email') || has('phone')) {
+    const find = (...keys: string[]) =>
+      header.findIndex((h) => keys.some((k) => h === k || h.startsWith(k)))
+    nameIdx = find('name', 'full name')
+    emailIdx = find('email', 'e-mail')
+    phoneIdx = find('phone', 'mobile', 'tel')
+    body = rows.slice(1)
+  }
+
+  const at = (cells: string[], idx: number) => (idx >= 0 ? (cells[idx] ?? '').trim() : '')
+  return body
+    .map((cells) => ({
+      name: at(cells, nameIdx),
+      email: at(cells, emailIdx),
+      phone: at(cells, phoneIdx),
+    }))
+    .filter((g) => g.name !== '' || g.email !== '' || g.phone !== '')
+}
+
+/**
+ * Minimal RFC-4180-ish CSV parser: handles quoted fields, escaped quotes
+ * (""), and both LF and CRLF line endings.
+ */
+function parseCsvRows(text: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let inQuotes = false
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i]
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          field += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        field += char
+      }
+    } else if (char === '"') {
+      inQuotes = true
+    } else if (char === ',') {
+      row.push(field)
+      field = ''
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && text[i + 1] === '\n') i++
+      row.push(field)
+      rows.push(row)
+      row = []
+      field = ''
+    } else {
+      field += char
+    }
+  }
+  if (field !== '' || row.length > 0) {
+    row.push(field)
+    rows.push(row)
+  }
+  return rows
+}
+
+function onCsvSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const parsed = parseCsv(String(reader.result ?? ''))
+    if (parsed.length === 0) {
+      toast.error('No guests found in that CSV file.')
+    } else {
+      // Drop the leading empty row if the form is still untouched.
+      const existing = guestForm.guests.filter((g) => g.name.trim() !== '' || g.email.trim() !== '')
+      guestForm.guests = [...existing, ...parsed].slice(0, 1000)
+      guestForm.clearErrors()
+      toast.success(`${parsed.length} guest${parsed.length === 1 ? '' : 's'} loaded from CSV.`)
+    }
+  }
+  reader.onerror = () => toast.error('Could not read that file.')
+  reader.readAsText(file)
+  input.value = ''
 }
 
 function removeRow(index: number) {
@@ -171,13 +278,27 @@ function toggleCheckIn(guest: GuestRow) {
   )
 }
 
-function removeGuest(guest: GuestRow) {
-  if (!confirm(`Remove ${guest.name} from the guest list?`)) return
+async function removeGuest(guest: GuestRow) {
+  const ok = await confirm({
+    title: `Remove ${guest.name}?`,
+    message: "They'll be taken off the guest list and their invite link will stop working.",
+    confirmLabel: 'Remove guest',
+    danger: true,
+    icon: 'pi-user-minus',
+  })
+  if (!ok) return
   router.delete(`/events/${props.event.id}/guests/${guest.id}`, { preserveScroll: true })
 }
 
-function deleteEvent() {
-  if (!confirm('Delete this event and all its guests? This cannot be undone.')) return
+async function deleteEvent() {
+  const ok = await confirm({
+    title: 'Delete this event?',
+    message: 'The event and all its guests will be permanently deleted. This cannot be undone.',
+    confirmLabel: 'Delete event',
+    danger: true,
+    icon: 'pi-trash',
+  })
+  if (!ok) return
   router.delete(`/events/${props.event.id}`)
 }
 
@@ -205,13 +326,13 @@ const rsvpVariant = (s: string) =>
       <Link :href="`/events/${event.id}/scan`" class="btn btn-secondary">
         <i class="pi pi-qrcode" /> Scan check-in
       </Link>
-      <Link :href="`/events/${event.id}/card`" class="btn btn-secondary">
-        <i class="pi pi-palette" /> Card designer
-      </Link>
-      <Link :href="`/events/${event.id}/edit`" class="btn btn-secondary">
-        <i class="pi pi-pencil" /> Edit
-      </Link>
-      <UiButton variant="danger-ghost" icon="pi-trash" @click="deleteEvent">Delete</UiButton>
+      <UiMenu label="More" icon="pi-ellipsis-h">
+        <UiMenuItem :href="`/events/${event.id}/card`" icon="pi-palette">Card designer</UiMenuItem>
+        <UiMenuItem :href="`/events/${event.id}/edit`" icon="pi-pencil">Edit event</UiMenuItem>
+        <UiMenuItem :href="`/events/${event.id}/settings`" icon="pi-cog">Event settings</UiMenuItem>
+        <div class="ui-menu__sep" />
+        <UiMenuItem icon="pi-trash" danger @click="deleteEvent">Delete event</UiMenuItem>
+      </UiMenu>
     </template>
   </UiPageHeader>
 
@@ -272,7 +393,23 @@ const rsvpVariant = (s: string) =>
         </div>
       </div>
 
-      <UiButton variant="secondary" icon="pi-plus" @click="addRow">Add another guest</UiButton>
+      <div class="flex flex-wrap gap-2">
+        <UiButton variant="secondary" icon="pi-plus" @click="addRow">Add another guest</UiButton>
+        <UiButton variant="secondary" icon="pi-upload" @click="csvInput?.click()">
+          Import CSV
+        </UiButton>
+        <input
+          ref="csvInput"
+          type="file"
+          accept=".csv,text/csv"
+          class="hidden"
+          @change="onCsvSelected"
+        />
+      </div>
+      <p class="text-xs text-muted">
+        CSV columns: <span class="font-semibold">name</span>, email, phone (a header row is
+        optional).
+      </p>
     </form>
 
     <template #footer>
@@ -393,14 +530,15 @@ const rsvpVariant = (s: string) =>
                   @click="shareCard(guest)"
                 />
               </UiTooltip>
-              <UiButton
-                v-if="guest.email"
-                variant="secondary"
-                size="sm"
-                icon="pi-envelope"
-                @click="sendEmail(guest)"
-                >Email</UiButton
-              >
+              <UiTooltip v-if="guest.email" label="Send email invite">
+                <UiButton
+                  variant="secondary"
+                  size="sm"
+                  aria-label="Send email invite"
+                  icon="pi-envelope"
+                  @click="sendEmail(guest)"
+                />
+              </UiTooltip>
               <UiButton variant="danger-ghost" size="sm" icon="pi-trash" @click="removeGuest(guest)"
                 >Remove</UiButton
               >
@@ -483,15 +621,16 @@ const rsvpVariant = (s: string) =>
             @click="shareCard(guest)"
           />
         </UiTooltip>
-        <UiButton
-          v-if="guest.email"
-          variant="secondary"
-          size="sm"
-          block
-          icon="pi-envelope"
-          @click="sendEmail(guest)"
-          >Email</UiButton
-        >
+        <UiTooltip v-if="guest.email" block label="Send email invite">
+          <UiButton
+            variant="secondary"
+            size="sm"
+            block
+            aria-label="Send email invite"
+            icon="pi-envelope"
+            @click="sendEmail(guest)"
+          />
+        </UiTooltip>
         <UiButton variant="danger-ghost" size="sm" block icon="pi-trash" @click="removeGuest(guest)"
           >Remove</UiButton
         >

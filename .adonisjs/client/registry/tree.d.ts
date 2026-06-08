@@ -12,6 +12,10 @@ export interface ApiDefinition {
     card: typeof routes['invite.card']
     rsvp: typeof routes['invite.rsvp']
   }
+  registrations: {
+    show: typeof routes['registrations.show']
+    register: typeof routes['registrations.register']
+  }
   newAccount: {
     create: typeof routes['new_account.create']
     store: typeof routes['new_account.store']
@@ -28,6 +32,8 @@ export interface ApiDefinition {
     store: typeof routes['events.store']
     show: typeof routes['events.show']
     edit: typeof routes['events.edit']
+    settings: typeof routes['events.settings']
+    updateSettings: typeof routes['events.updateSettings']
     update: typeof routes['events.update']
     destroy: typeof routes['events.destroy']
   }
@@ -36,6 +42,10 @@ export interface ApiDefinition {
     bulk: typeof routes['guests.bulk']
     update: typeof routes['guests.update']
     destroy: typeof routes['guests.destroy']
+  }
+  registrationLinks: {
+    store: typeof routes['registration_links.store']
+    destroy: typeof routes['registration_links.destroy']
   }
   invitations: {
     email: typeof routes['invitations.email']

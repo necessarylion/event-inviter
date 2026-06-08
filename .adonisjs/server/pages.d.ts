@@ -20,6 +20,7 @@ declare module '@adonisjs/inertia/types' {
     'events/card_designer': ExtractProps<(typeof import('../../inertia/pages/events/card_designer.vue'))['default']>
     'events/create': ExtractProps<(typeof import('../../inertia/pages/events/create.vue'))['default']>
     'events/edit': ExtractProps<(typeof import('../../inertia/pages/events/edit.vue'))['default']>
+    'events/settings': ExtractProps<(typeof import('../../inertia/pages/events/settings.vue'))['default']>
     'events/show': ExtractProps<(typeof import('../../inertia/pages/events/show.vue'))['default']>
     'home': ExtractProps<(typeof import('../../inertia/pages/home.vue'))['default']>
     'settings/email': ExtractProps<(typeof import('../../inertia/pages/settings/email.vue'))['default']>

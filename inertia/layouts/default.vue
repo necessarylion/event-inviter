@@ -4,7 +4,7 @@ import { usePage } from '@inertiajs/vue3'
 import { toast, Toaster } from 'vue-sonner'
 import type { Data } from '@generated/data'
 import { Link, Form } from '@adonisjs/inertia/vue'
-import { BrandMark } from '~/components/ui'
+import { BrandMark, UiConfirm, UiMenu } from '~/components/ui'
 import { useTheme } from '~/composables/use_theme'
 
 const page = usePage<Data.SharedProps>()
@@ -68,12 +68,12 @@ function isActive(prefix: string) {
             route="email_settings.edit"
             class="rounded-[9px] px-3 py-2 text-[15px] font-medium no-underline transition-colors"
             :class="
-              isActive('/settings/email')
+              isActive('/settings')
                 ? 'bg-surface-2 text-ink'
                 : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
             "
           >
-            Email
+            Settings
           </Link>
           <Link
             v-if="page.props.user?.isAdmin"
@@ -104,15 +104,28 @@ function isActive(prefix: string) {
           <Link route="events.create" class="btn btn-primary btn-sm hidden sm:inline-flex">
             <i class="pi pi-plus" /> New event
           </Link>
-          <span
-            class="grid h-9 w-9 flex-none place-items-center rounded-full bg-accent-500 text-[13px] font-bold text-accent-contrast"
-            :title="page.props.user.email ?? undefined"
-          >
-            {{ page.props.user.initials }}
-          </span>
-          <Form route="session.destroy">
-            <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
-          </Form>
+          <UiMenu align="right">
+            <template #trigger>
+              <span
+                class="grid h-9 w-9 flex-none place-items-center rounded-full bg-accent-500 text-[13px] font-bold text-accent-contrast"
+              >
+                {{ page.props.user.initials }}
+              </span>
+            </template>
+            <div class="ui-menu__header">
+              <span v-if="page.props.user.fullName" class="ui-menu__header-name">
+                {{ page.props.user.fullName }}
+              </span>
+              <span class="ui-menu__header-email">{{ page.props.user.email }}</span>
+            </div>
+            <div class="ui-menu__sep" />
+            <Form route="session.destroy" class="contents">
+              <button type="submit" class="ui-menu__item ui-menu__item--danger" role="menuitem">
+                <i class="pi pi-sign-out" />
+                Logout
+              </button>
+            </Form>
+          </UiMenu>
         </template>
         <template v-else>
           <Link route="session.create" class="btn btn-ghost btn-sm">Login</Link>
@@ -131,6 +144,8 @@ function isActive(prefix: string) {
       <slot />
     </main>
   </div>
+
+  <UiConfirm />
 
   <Toaster position="top-center" rich-colors />
 </template>

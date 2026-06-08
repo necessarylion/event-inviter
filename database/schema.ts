@@ -187,6 +187,33 @@ export class InvitationSchema extends BaseModel {
   declare viewedAt: DateTime | null
 }
 
+export class RegistrationLinkSchema extends BaseModel {
+  static $columns = [
+    'createdAt',
+    'eventId',
+    'expiresAt',
+    'id',
+    'isActive',
+    'token',
+    'updatedAt',
+  ] as const
+  $columns = RegistrationLinkSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare eventId: number
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean
+  @column()
+  declare token: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class TemplatePresetSchema extends BaseModel {
   static $columns = [
     'createdAt',

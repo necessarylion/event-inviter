@@ -2,8 +2,13 @@ import Event from '#models/event'
 import { randomBytes } from 'node:crypto'
 import string from '@adonisjs/core/helpers/string'
 import invitationService from '#services/invitation_service'
+import registrationLinkService from '#services/registration_link_service'
 import type { HttpContext } from '@adonisjs/core/http'
-import { createEventValidator, updateEventValidator } from '#validators/event'
+import {
+  createEventValidator,
+  updateEventValidator,
+  eventSettingsValidator,
+} from '#validators/event'
 
 export default class EventsController {
   async create({ inertia }: HttpContext) {
@@ -100,6 +105,51 @@ export default class EventsController {
 
     session.flash('success', 'Event updated.')
     return response.redirect().toRoute('events.show', { id: event.id })
+  }
+
+  /**
+   * Per-event settings page: public RSVP toggle + the shareable registration
+   * link (managed via RegistrationLinksController).
+   */
+  async settings({ params, auth, inertia, response }: HttpContext) {
+    const event = await this.findOwned(auth.user!.id, params.id)
+    if (!event) {
+      return response.notFound('Event not found')
+    }
+
+    await event.load('registrationLink')
+    const link = event.registrationLink
+
+    return inertia.render('events/settings', {
+      event: {
+        id: event.id,
+        title: event.title,
+        allowPublicRsvp: event.allowPublicRsvp,
+      },
+      registrationLink: link
+        ? {
+            url: registrationLinkService.registrationUrl(link.token),
+            isActive: link.isActive,
+            expiresAt: link.expiresAt?.toISO() ?? null,
+            isExpired: link.isExpired,
+            isUsable: link.isUsable,
+          }
+        : null,
+    })
+  }
+
+  async updateSettings({ params, request, auth, response, session }: HttpContext) {
+    const event = await this.findOwned(auth.user!.id, params.id)
+    if (!event) {
+      return response.notFound('Event not found')
+    }
+
+    const payload = await request.validateUsing(eventSettingsValidator)
+    event.merge(payload)
+    await event.save()
+
+    session.flash('success', 'Settings saved.')
+    return response.redirect().toRoute('events.settings', { id: event.id })
   }
 
   async destroy({ params, auth, response, session }: HttpContext) {

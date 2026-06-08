@@ -42,6 +42,18 @@ const routes = {
     tokens: [{"old":"/i/:token/rsvp","type":0,"val":"i","end":""},{"old":"/i/:token/rsvp","type":1,"val":"token","end":""},{"old":"/i/:token/rsvp","type":0,"val":"rsvp","end":""}],
     types: placeholder as Registry['invite.rsvp']['types'],
   },
+  'registrations.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/r/:token',
+    tokens: [{"old":"/r/:token","type":0,"val":"r","end":""},{"old":"/r/:token","type":1,"val":"token","end":""}],
+    types: placeholder as Registry['registrations.show']['types'],
+  },
+  'registrations.register': {
+    methods: ["POST"],
+    pattern: '/r/:token',
+    tokens: [{"old":"/r/:token","type":0,"val":"r","end":""},{"old":"/r/:token","type":1,"val":"token","end":""}],
+    types: placeholder as Registry['registrations.register']['types'],
+  },
   'new_account.create': {
     methods: ["GET","HEAD"],
     pattern: '/signup',
@@ -108,6 +120,18 @@ const routes = {
     tokens: [{"old":"/events/:id/edit","type":0,"val":"events","end":""},{"old":"/events/:id/edit","type":1,"val":"id","end":""},{"old":"/events/:id/edit","type":0,"val":"edit","end":""}],
     types: placeholder as Registry['events.edit']['types'],
   },
+  'events.settings': {
+    methods: ["GET","HEAD"],
+    pattern: '/events/:id/settings',
+    tokens: [{"old":"/events/:id/settings","type":0,"val":"events","end":""},{"old":"/events/:id/settings","type":1,"val":"id","end":""},{"old":"/events/:id/settings","type":0,"val":"settings","end":""}],
+    types: placeholder as Registry['events.settings']['types'],
+  },
+  'events.updateSettings': {
+    methods: ["PUT"],
+    pattern: '/events/:id/settings',
+    tokens: [{"old":"/events/:id/settings","type":0,"val":"events","end":""},{"old":"/events/:id/settings","type":1,"val":"id","end":""},{"old":"/events/:id/settings","type":0,"val":"settings","end":""}],
+    types: placeholder as Registry['events.updateSettings']['types'],
+  },
   'events.update': {
     methods: ["PUT"],
     pattern: '/events/:id',
@@ -143,6 +167,18 @@ const routes = {
     pattern: '/events/:eventId/guests/:id',
     tokens: [{"old":"/events/:eventId/guests/:id","type":0,"val":"events","end":""},{"old":"/events/:eventId/guests/:id","type":1,"val":"eventId","end":""},{"old":"/events/:eventId/guests/:id","type":0,"val":"guests","end":""},{"old":"/events/:eventId/guests/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['guests.destroy']['types'],
+  },
+  'registration_links.store': {
+    methods: ["POST"],
+    pattern: '/events/:eventId/registration-link',
+    tokens: [{"old":"/events/:eventId/registration-link","type":0,"val":"events","end":""},{"old":"/events/:eventId/registration-link","type":1,"val":"eventId","end":""},{"old":"/events/:eventId/registration-link","type":0,"val":"registration-link","end":""}],
+    types: placeholder as Registry['registration_links.store']['types'],
+  },
+  'registration_links.destroy': {
+    methods: ["DELETE"],
+    pattern: '/events/:eventId/registration-link',
+    tokens: [{"old":"/events/:eventId/registration-link","type":0,"val":"events","end":""},{"old":"/events/:eventId/registration-link","type":1,"val":"eventId","end":""},{"old":"/events/:eventId/registration-link","type":0,"val":"registration-link","end":""}],
+    types: placeholder as Registry['registration_links.destroy']['types'],
   },
   'invitations.email': {
     methods: ["POST"],

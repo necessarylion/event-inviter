@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{{ event.title }} — Register to attend</title>
+    <meta
+      name="description"
+      content="Register to attend {{ event.title }}. Reserve your spot in a few seconds."
+    />
+    <meta name="robots" content="noindex" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Register to attend {{ event.title }}" />
+    <meta
+      property="og:description"
+      content="{{ event.when ? event.when.start : 'Reserve your spot to attend.' }}"
+    />
+    <meta property="og:url" content="{{ registrationUrl }}" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/primeicons@7.0.0/primeicons.css" />
+
+    <style>
+      /* Layered surface tokens (brand colour + fonts come from brand_tokens.css). */
+      :root {
+        --p-slate-0: #ffffff;
+        --p-slate-50: #f8fafc;
+        --p-slate-100: #f1f5f9;
+        --p-slate-200: #e2e8f0;
+        --p-slate-300: #cbd5e1;
+        --p-slate-400: #94a3b8;
+        --p-slate-500: #64748b;
+        --p-slate-600: #475569;
+        --p-slate-900: #0f172a;
+
+        --ink: var(--p-slate-900);
+        --ink-2: var(--p-slate-600);
+        --ink-3: var(--p-slate-500);
+        --line: var(--p-slate-200);
+        --field: #ffffff;
+        --bg: #ffffff;
+        --bg-2: var(--p-slate-50);
+
+        --radius: 14px;
+        --radius-lg: 22px;
+        --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
+
+        --flash-error-bg: #fef2f2;
+        --flash-error-fg: #b91c1c;
+        --flash-error-line: #fecaca;
+      }
+
+      [data-theme='dark'] {
+        --ink: #f1f5f9;
+        --ink-2: #cbd5e1;
+        --ink-3: #94a3b8;
+        --line: #1e293b;
+        --field: #0b1120;
+        --bg: #0f172a;
+        --bg-2: #0b1120;
+        --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+
+        --flash-error-bg: #2a1416;
+        --flash-error-fg: #fca5a5;
+        --flash-error-line: #5b1d1d;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
+        color: var(--ink);
+        line-height: 1.5;
+        min-height: 100vh;
+        padding: 32px 20px;
+        background: var(--bg-2);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .controls {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 10;
+        display: flex;
+        gap: 8px;
+      }
+      .icon-btn {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--bg);
+        color: var(--ink-2);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-card);
+        cursor: pointer;
+        font-size: 17px;
+        transition:
+          background 0.2s,
+          color 0.2s,
+          border-color 0.2s,
+          transform 0.15s ease;
+      }
+      .icon-btn:active {
+        transform: scale(0.94);
+      }
+
+      .page {
+        position: relative;
+        display: flex;
+        justify-content: center;
+      }
+      .page::before {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+        width: 720px;
+        height: 720px;
+        top: -320px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: radial-gradient(
+          closest-side,
+          color-mix(in srgb, var(--accent-500), transparent 82%),
+          transparent 72%
+        );
+      }
+
+      .card {
+        position: relative;
+        width: 100%;
+        max-width: 480px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+      }
+      .cover-fallback {
+        height: 120px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(150deg, var(--accent-600), var(--accent-500));
+      }
+      .cover-fallback .mark {
+        width: 52px;
+        height: 52px;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        font-size: 24px;
+      }
+
+      .body {
+        padding: 30px 30px 26px;
+      }
+
+      .flash {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 12px 15px;
+        border-radius: var(--radius);
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .flash i {
+        font-size: 15px;
+      }
+      .flash-success {
+        background: var(--accent-50);
+        color: var(--accent-700);
+        border: 1px solid color-mix(in srgb, var(--accent-500), transparent 78%);
+      }
+      .flash-error {
+        background: var(--flash-error-bg);
+        color: var(--flash-error-fg);
+        border: 1px solid var(--flash-error-line);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-700);
+        background: var(--accent-50);
+        border: 1px solid color-mix(in srgb, var(--accent-500), transparent 78%);
+        padding: 6px 13px;
+        border-radius: 999px;
+      }
+      .eyebrow .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent-500);
+      }
+
+      h1 {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.08;
+        margin: 16px 0 18px;
+        color: var(--ink);
+        text-wrap: balance;
+      }
+
+      .meta {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .meta-row {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: var(--ink-2);
+        font-size: 15px;
+      }
+      .meta-row .mi {
+        width: 34px;
+        height: 34px;
+        flex: none;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-50);
+        color: var(--accent-600);
+        font-size: 15px;
+      }
+      .meta-row .mt {
+        line-height: 1.45;
+      }
+      .meta-row .mt .line2 {
+        display: block;
+      }
+
+      .desc {
+        color: var(--ink-2);
+        font-size: 15px;
+        line-height: 1.6;
+        margin-top: 18px;
+        text-wrap: pretty;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--line);
+        margin: 26px 0;
+      }
+
+      /* ---- form ---- */
+      .form h3 {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+      .form .lede {
+        color: var(--ink-3);
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-2);
+        margin-bottom: 6px;
+      }
+      .field label .req {
+        color: var(--accent-600);
+      }
+      .field input {
+        width: 100%;
+        font-family: inherit;
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--field);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .field input::placeholder {
+        color: var(--ink-3);
+      }
+      .field input:focus {
+        outline: none;
+        border-color: var(--accent-500);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-500), transparent 82%);
+      }
+
+      .btn {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        margin-top: 4px;
+        transition:
+          transform 0.15s ease,
+          background 0.2s,
+          border-color 0.2s;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: var(--accent-500);
+        color: var(--accent-contrast);
+        border-color: var(--accent-500);
+        box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent-500), transparent 45%);
+      }
+      .btn-primary:hover {
+        background: var(--accent-600);
+        border-color: var(--accent-600);
+      }
+
+      .closed {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 16px;
+        border-radius: var(--radius);
+        background: var(--flash-error-bg);
+        color: var(--flash-error-fg);
+        border: 1px solid var(--flash-error-line);
+      }
+
+      .foot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        text-align: center;
+        color: var(--ink-3);
+        font-size: 13px;
+        margin-top: 22px;
+      }
+      .foot .mark {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-500);
+        color: var(--accent-contrast);
+        font-size: 10px;
+      }
+
+      @media (max-width: 540px) {
+        body {
+          padding: 16px 14px;
+        }
+        .body {
+          padding: 24px 22px 22px;
+        }
+        h1 {
+          font-size: 26px;
+        }
+      }
+    </style>
+    @vite(['inertia/css/brand_tokens.css'])
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('invite-theme');
+          var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="controls">
+      <button
+        class="icon-btn theme-toggle"
+        type="button"
+        onclick="toggleTheme()"
+        aria-label="Toggle dark mode"
+      >
+        <i class="pi pi-moon"></i>
+      </button>
+    </div>
+
+    <div class="page">
+      <div class="card">
+        <div class="cover-fallback"><span class="mark"><i class="pi pi-ticket"></i></span></div>
+
+        <div class="body">
+          @if(flashMessages.has('error'))
+            <div class="flash flash-error">
+              <i class="pi pi-exclamation-circle"></i>
+              {{ flashMessages.get('error') }}
+            </div>
+          @end
+
+          <span class="eyebrow"><span class="dot"></span> You're invited</span>
+          <h1>{{ event.title }}</h1>
+
+          <div class="meta">
+            @if(event.when)
+              <div class="meta-row">
+                <span class="mi"><i class="pi pi-calendar"></i></span>
+                <span class="mt">
+                  {{ event.when.start }}
+                  @if(event.when.end)
+                    <span class="line2">{{ event.when.end }}</span>
+                  @end
+                </span>
+              </div>
+            @end
+            @if(event.location)
+              <div class="meta-row">
+                <span class="mi"><i class="pi pi-map-marker"></i></span>
+                <span class="mt">{{ event.location }}</span>
+              </div>
+            @end
+          </div>
+          @if(event.description)
+            <p class="desc">{{ event.description }}</p>
+          @end
+
+          <div class="divider"></div>
+          @if(isOpen)
+            <div class="form">
+              <h3>Register to attend</h3>
+              <p class="lede">
+                Reserve your spot — we'll send you to your personal invite with a QR code for check-in.
+              </p>
+
+              <form method="POST" action="/r/{{ token }}">
+                @if(csrfField)
+                  {{ csrfField() }}
+                @end
+
+                <div class="field">
+                  <label for="name">Full name <span class="req">*</span></label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    maxlength="150"
+                    placeholder="Jane Doe"
+                    value="{{ flashMessages.get('name') ?? '' }}"
+                  />
+                </div>
+                <div class="field">
+                  <label for="email">Email <span class="req">*</span></label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    maxlength="254"
+                    placeholder="jane@example.com"
+                    value="{{ flashMessages.get('email') ?? '' }}"
+                  />
+                </div>
+                <div class="field">
+                  <label for="phone">
+                    Phone
+                    <span style="color: var(--ink-3); font-weight: 500">(optional)</span>
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    maxlength="40"
+                    placeholder="+1 555 123 4567"
+                    value="{{ flashMessages.get('phone') ?? '' }}"
+                  />
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                  <i class="pi pi-check"></i>
+                  Register
+                </button>
+              </form>
+            </div>
+          @else
+            <div class="closed">
+              <i class="pi pi-lock"></i>
+              @if(isExpired)
+                Registration for this event has closed — this link has expired.
+              @else
+                Registration for this event is currently closed.
+              @end
+            </div>
+          @end
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span class="mark"><i class="pi pi-ticket"></i></span>
+      Powered by Guest Invite
+    </div>
+
+    <script>
+      function syncThemeIcon() {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        var icon = document.querySelector('.theme-toggle i');
+        if (icon) icon.className = dark ? 'pi pi-sun' : 'pi pi-moon';
+      }
+      function toggleTheme() {
+        var root = document.documentElement;
+        var dark = root.getAttribute('data-theme') === 'dark';
+        if (dark) {
+          root.removeAttribute('data-theme');
+          try {
+            localStorage.setItem('invite-theme', 'light');
+          } catch (e) {}
+        } else {
+          root.setAttribute('data-theme', 'dark');
+          try {
+            localStorage.setItem('invite-theme', 'dark');
+          } catch (e) {}
+        }
+        syncThemeIcon();
+      }
+      syncThemeIcon();
+    </script>
+  </body>
+</html>

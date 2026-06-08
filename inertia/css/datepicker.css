@@ -1,0 +1,55 @@
+/* ===========================================================================
+   @vuepic/vue-datepicker — theme overrides
+   ---------------------------------------------------------------------------
+   Imported in app.ts AFTER the library's main.css so these (unlayered) rules
+   win the cascade. The colour vars map onto the app's semantic tokens, which
+   already flip under <html data-theme="dark">, so both dp theme classes get the
+   same mapping and the picker follows the app theme automatically.
+   =========================================================================== */
+:root {
+  --dp-font-family: var(--font-sans);
+  --dp-border-radius: 10px;
+  --dp-cell-border-radius: 8px;
+}
+
+.dp__theme_light,
+.dp__theme_dark {
+  --dp-background-color: var(--field-bg);
+  --dp-text-color: var(--field-text);
+  --dp-hover-color: var(--bg-2);
+  --dp-hover-text-color: var(--ink);
+  --dp-hover-icon-color: var(--ink-2);
+  --dp-primary-color: var(--accent-500);
+  --dp-primary-text-color: var(--accent-contrast);
+  --dp-secondary-color: var(--ink-3);
+  --dp-border-color: var(--field-border);
+  --dp-menu-border-color: var(--line);
+  --dp-border-color-hover: var(--slate-400);
+  --dp-border-color-focus: var(--accent-500);
+  --dp-disabled-color-text: var(--ink-3);
+  --dp-icon-color: var(--ink-3);
+  --dp-danger-color: var(--red-500);
+  --dp-success-color: var(--accent-500);
+  --dp-marker-color: var(--accent-500);
+  --dp-highlight-color: color-mix(in srgb, var(--accent-500), transparent 88%);
+  --dp-range-between-dates-background-color: color-mix(in srgb, var(--accent-500), transparent 86%);
+}
+
+/* Match the app's .input control sizing + focus ring. */
+.dp__input {
+  font-family: inherit;
+  font-size: 14px;
+  min-height: 38px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.dp__input_focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-500), transparent 84%);
+}
+.dp-invalid.dp__input,
+.dp-invalid .dp__input {
+  border-color: var(--red-400);
+}
+.dp__menu {
+  box-shadow: var(--shadow-float);
+}

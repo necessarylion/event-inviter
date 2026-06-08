@@ -29,3 +29,11 @@ const eventFields = {
 
 export const createEventValidator = vine.create({ ...eventFields })
 export const updateEventValidator = vine.create({ ...eventFields })
+
+/**
+ * Per-event settings (the event settings page) — currently just the public
+ * RSVP toggle.
+ */
+export const eventSettingsValidator = vine.create({
+  allowPublicRsvp: vine.boolean(),
+})

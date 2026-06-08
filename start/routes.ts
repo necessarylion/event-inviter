@@ -24,6 +24,13 @@ router.get('/i/:token', [controllers.Invite, 'show']).as('invite.show')
 router.get('/i/:token/card', [controllers.Invite, 'card']).as('invite.card')
 router.post('/i/:token/rsvp', [controllers.Invite, 'rsvp']).as('invite.rsvp')
 
+/**
+ * Public, event-level self-registration link (one per event). Anyone with the
+ * link can register as a guest until it's disabled or expires.
+ */
+router.get('/r/:token', [controllers.Registrations, 'show']).as('registrations.show')
+router.post('/r/:token', [controllers.Registrations, 'register']).as('registrations.register')
+
 /*
 |--------------------------------------------------------------------------
 | Guest-only auth pages
@@ -59,6 +66,10 @@ router
     router.post('events', [controllers.Events, 'store']).as('events.store')
     router.get('events/:id', [controllers.Events, 'show']).as('events.show')
     router.get('events/:id/edit', [controllers.Events, 'edit']).as('events.edit')
+    router.get('events/:id/settings', [controllers.Events, 'settings']).as('events.settings')
+    router
+      .put('events/:id/settings', [controllers.Events, 'updateSettings'])
+      .as('events.updateSettings')
     router.put('events/:id', [controllers.Events, 'update']).as('events.update')
     router.delete('events/:id', [controllers.Events, 'destroy']).as('events.destroy')
 
@@ -71,6 +82,17 @@ router
     router
       .delete('events/:eventId/guests/:id', [controllers.Guests, 'destroy'])
       .as('guests.destroy')
+
+    /**
+     * Public registration link (one per event) — create / set expiry /
+     * enable-disable / regenerate, and remove.
+     */
+    router
+      .post('events/:eventId/registration-link', [controllers.RegistrationLinks, 'store'])
+      .as('registration_links.store')
+    router
+      .delete('events/:eventId/registration-link', [controllers.RegistrationLinks, 'destroy'])
+      .as('registration_links.destroy')
 
     /**
      * Invitations (email delivery)

@@ -85,6 +85,7 @@
     "@tuyau/core": "^1.2.2",
     "@vinejs/vine": "^4.4.0",
     "@vue/server-renderer": "^3.5.35",
+    "@vuepic/vue-datepicker": "^14.0.0",
     "antd": "^6.4.3",
     "edge.js": "^6.5.1",
     "firebase": "^12.14.0",

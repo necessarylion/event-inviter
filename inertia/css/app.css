@@ -309,6 +309,137 @@
     color: var(--accent-400);
   }
 
+  /* ---- Menu / dropdown (UiMenu.vue + UiMenuItem.vue) ------------------- */
+  .ui-menu {
+    position: relative;
+    display: inline-flex;
+  }
+  .ui-menu__trigger {
+    display: inline-flex;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .ui-menu__trigger:focus-visible {
+    outline: 2px solid var(--accent-500);
+    outline-offset: 2px;
+  }
+  .ui-menu__chev {
+    font-size: 10px;
+    opacity: 0.55;
+    transition: transform 0.2s ease;
+  }
+  .ui-menu[data-open='true'] .ui-menu__chev {
+    transform: rotate(180deg);
+  }
+  .ui-menu__panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    z-index: 40;
+    min-width: 200px;
+    padding: 6px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+  }
+  .ui-menu__panel--right {
+    right: 0;
+  }
+  .ui-menu__panel--left {
+    left: 0;
+  }
+  .ui-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--ink);
+    text-align: left;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  .ui-menu__item i {
+    width: 16px;
+    font-size: 14px;
+    color: var(--ink-3);
+    transition: color 0.15s;
+  }
+  .ui-menu__item:hover {
+    background: var(--bg-2);
+  }
+  .ui-menu__item:hover i {
+    color: var(--ink);
+  }
+  .ui-menu__item--danger {
+    color: var(--red-500);
+  }
+  .ui-menu__item--danger i,
+  .ui-menu__item--danger:hover i {
+    color: var(--red-500);
+  }
+  .ui-menu__item--danger:hover {
+    background: var(--red-50);
+    color: var(--red-600);
+  }
+  .ui-menu__item--danger:hover i {
+    color: var(--red-600);
+  }
+  .ui-menu__sep {
+    height: 1px;
+    margin: 5px 6px;
+    background: var(--line);
+  }
+  .ui-menu__header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px 6px;
+  }
+  .ui-menu__header-name {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .ui-menu__header-email {
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--ink-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ui-menu-pop-enter-active,
+  .ui-menu-pop-leave-active {
+    transition:
+      opacity 0.14s ease,
+      transform 0.14s ease;
+    transform-origin: top var(--ui-menu-origin, right);
+  }
+  .ui-menu__panel--left.ui-menu-pop-enter-active,
+  .ui-menu__panel--left.ui-menu-pop-leave-active {
+    transform-origin: top left;
+  }
+  .ui-menu-pop-enter-from,
+  .ui-menu-pop-leave-to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+
   /* Soft focus ring helper */
   .ring-accent {
     border-color: var(--accent-500);

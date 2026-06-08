@@ -6,7 +6,7 @@
  */
 /* eslint-disable vue/no-mutating-props */
 import type { InertiaForm } from '@inertiajs/vue3'
-import { UiField, UiInput, UiTextarea, UiCheckbox } from '~/components/ui'
+import { UiField, UiInput, UiTextarea, UiDatePicker } from '~/components/ui'
 
 interface EventFormData {
   title: string
@@ -31,27 +31,20 @@ defineProps<{ form: InertiaForm<EventFormData> }>()
     </UiField>
 
     <div class="grid gap-[18px] sm:grid-cols-2">
-      <UiField label="Starts at" for="startsAt" :error="form.errors.startsAt">
-        <UiInput
-          id="startsAt"
+      <UiField label="Starts at" :error="form.errors.startsAt">
+        <UiDatePicker
           v-model="form.startsAt"
-          type="datetime-local"
+          placeholder="Select date & time"
           :invalid="!!form.errors.startsAt"
         />
       </UiField>
-      <UiField label="Ends at" for="endsAt" optional :error="form.errors.endsAt">
-        <UiInput id="endsAt" v-model="form.endsAt" type="datetime-local" />
+      <UiField label="Ends at" optional :error="form.errors.endsAt">
+        <UiDatePicker v-model="form.endsAt" placeholder="Select date & time" />
       </UiField>
     </div>
 
     <UiField label="Location name" for="location" optional>
       <UiInput id="location" v-model="form.location" />
-    </UiField>
-
-    <UiField label="Public RSVP">
-      <UiCheckbox v-model="form.allowPublicRsvp">
-        Allow guests to RSVP from the invite link
-      </UiCheckbox>
     </UiField>
   </div>
 </template>

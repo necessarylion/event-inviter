@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import { Head, router, useForm } from '@inertiajs/vue3'
+import SettingsLayout from '~/components/settings_layout.vue'
 import {
   UiButton,
   UiCard,
@@ -64,7 +65,7 @@ function formatDate(iso: string | null) {
 <template>
   <Head title="Email settings" />
 
-  <div class="mx-auto max-w-[680px]">
+  <SettingsLayout>
     <UiPageHeader
       title="Email settings"
       subtitle="Send invitations from your own email provider. Leave blank to use the system default."
@@ -185,5 +186,5 @@ function formatDate(iso: string | null) {
         </div>
       </form>
     </UiCard>
-  </div>
+  </SettingsLayout>
 </template>

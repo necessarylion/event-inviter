@@ -79,6 +79,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/invite_controller').default['rsvp']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'registrations.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/r/:token'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { token: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/registrations_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/registrations_controller').default['show']>>>
+    }
+  }
+  'registrations.register': {
+    methods: ["POST"]
+    pattern: '/r/:token'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/registration').publicRegisterValidator)>>
+      paramsTuple: [ParamValue]
+      params: { token: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/registration').publicRegisterValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/registrations_controller').default['register']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/registrations_controller').default['register']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'new_account.create': {
     methods: ["GET","HEAD"]
     pattern: '/signup'
@@ -211,6 +235,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/events_controller').default['edit']>>>
     }
   }
+  'events.settings': {
+    methods: ["GET","HEAD"]
+    pattern: '/events/:id/settings'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/events_controller').default['settings']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/events_controller').default['settings']>>>
+    }
+  }
+  'events.updateSettings': {
+    methods: ["PUT"]
+    pattern: '/events/:id/settings'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/event').eventSettingsValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/event').eventSettingsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/events_controller').default['updateSettings']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/events_controller').default['updateSettings']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'events.update': {
     methods: ["PUT"]
     pattern: '/events/:id'
@@ -281,6 +329,30 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/guests_controller').default['destroy']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/guests_controller').default['destroy']>>>
+    }
+  }
+  'registration_links.store': {
+    methods: ["POST"]
+    pattern: '/events/:eventId/registration-link'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/registration').registrationLinkValidator)>>
+      paramsTuple: [ParamValue]
+      params: { eventId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/registration').registrationLinkValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/registration_links_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/registration_links_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'registration_links.destroy': {
+    methods: ["DELETE"]
+    pattern: '/events/:eventId/registration-link'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { eventId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/registration_links_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/registration_links_controller').default['destroy']>>>
     }
   }
   'invitations.email': {
