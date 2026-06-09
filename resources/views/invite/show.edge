@@ -275,6 +275,23 @@
         font-size: 13px;
         color: var(--ink-3);
       }
+      .meta-row .map-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-700);
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .meta-row .map-link:hover {
+        text-decoration: underline;
+      }
+      .meta-row .map-link i {
+        font-size: 12px;
+      }
 
       .desc {
         color: var(--ink-2);
@@ -504,7 +521,14 @@
             @if(event.location)
               <div class="meta-row">
                 <span class="mi"><i class="pi pi-map-marker"></i></span>
-                <span class="mt">{{ event.location }}</span>
+                <span class="mt">
+                  {{ event.location }}
+                  @if(event.mapUrl)
+                    <a class="map-link" href="{{ event.mapUrl }}" target="_blank" rel="noopener noreferrer">
+                      <i class="pi pi-directions"></i> Open in map
+                    </a>
+                  @end
+                </span>
               </div>
             @end
           </div>

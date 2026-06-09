@@ -5,25 +5,27 @@ import type { HttpContext } from '@adonisjs/core/http'
  * Public, server-rendered (Edge) marketing pages — optimized for SEO.
  */
 export default class PagesController {
-  async home({ view, auth, response }: HttpContext) {
+  async home({ view, auth }: HttpContext) {
     /**
-     * Logged-in visitors go straight to their dashboard.
+     * The home page is public and always accessible — logged-in visitors see it
+     * too (so `auth.check()` is only used to tailor the page, not to redirect).
      */
-    if (await auth.check()) {
-      return response.redirect().toRoute('dashboard')
-    }
+    const isAuthenticated = await auth.check()
 
-    return view.render('pages/home', { appUrl: env.get('APP_URL') })
+    return view.render('pages/home', {
+      appUrl: env.get('APP_URL'),
+      isAuthenticated,
+    })
   }
 
   async robots({ response }: HttpContext) {
     response.header('Content-Type', 'text/plain')
-    return `User-agent: *\nAllow: /\nDisallow: /dashboard\nDisallow: /events\nSitemap: ${env.get('APP_URL')}/sitemap.xml\n`
+    return `User-agent: *\nAllow: /\nDisallow: /dashboard\nSitemap: ${env.get('APP_URL')}/sitemap.xml\n`
   }
 
   async sitemap({ response }: HttpContext) {
     const base = env.get('APP_URL')
-    const urls = ['/', '/signup', '/login']
+    const urls = ['/', '/events', '/signup', '/login']
 
     response.header('Content-Type', 'application/xml')
     return `<?xml version="1.0" encoding="UTF-8"?>

@@ -10,9 +10,11 @@ type EventData = {
   title: string
   description: string | null
   location: string | null
+  mapUrl: string | null
   startsAt: string | null
   endsAt: string | null
   allowPublicRsvp: boolean
+  thumbnailUrl: string | null
 }
 
 const props = defineProps<{ event: EventData }>()
@@ -25,19 +27,22 @@ const form = useForm({
   title: props.event.title,
   description: props.event.description ?? '',
   location: props.event.location ?? '',
+  mapUrl: props.event.mapUrl ?? '',
   startsAt: toLocalInput(props.event.startsAt),
   endsAt: toLocalInput(props.event.endsAt),
   allowPublicRsvp: props.event.allowPublicRsvp,
+  thumbnail: null as File | null,
+  removeThumbnail: false,
 })
 
 function submit() {
   form
-    .transform((data) => ({
-      ...data,
-      description: data.description || null,
-      location: data.location || null,
-      endsAt: data.endsAt || null,
-    }))
+    .transform((data) => {
+      // Empty optional fields are normalised to null server-side; drop the
+      // thumbnail key when no file is picked so it isn't sent as an empty value.
+      const { thumbnail, ...rest } = data
+      return thumbnail ? data : rest
+    })
     .put(`/events/${props.event.id}`)
 }
 </script>
@@ -57,7 +62,7 @@ function submit() {
 
     <UiCard>
       <form class="flex flex-col" @submit.prevent="submit">
-        <EventFields :form="form" />
+        <EventFields :form="form" :current-thumbnail-url="event.thumbnailUrl" />
         <div class="mt-7 flex items-center gap-3">
           <UiButton type="submit" :loading="form.processing" icon="pi-check">Save changes</UiButton>
           <Link :href="`/events/${event.id}`" class="btn btn-ghost">Cancel</Link>

@@ -15,6 +15,7 @@ export const controllers = {
   Invite: () => import('#controllers/invite_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
   Pages: () => import('#controllers/pages_controller'),
+  PublicEvents: () => import('#controllers/public_events_controller'),
   RegistrationLinks: () => import('#controllers/registration_links_controller'),
   Registrations: () => import('#controllers/registrations_controller'),
   Session: () => import('#controllers/session_controller'),

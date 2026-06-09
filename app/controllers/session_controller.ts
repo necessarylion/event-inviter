@@ -1,5 +1,6 @@
 import User from '#models/user'
 import firebase from '#services/firebase_service'
+import { redirectAfterLogin } from '#services/login_redirect'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class SessionController {
@@ -7,12 +8,12 @@ export default class SessionController {
     return inertia.render('auth/login', {})
   }
 
-  async store({ request, auth, response }: HttpContext) {
+  async store({ request, auth, response, session }: HttpContext) {
     const { email, password } = request.all()
     const user = await User.verifyCredentials(email, password)
 
     await auth.use('web').login(user)
-    response.redirect().toRoute('dashboard')
+    redirectAfterLogin(response, session)
   }
 
   /**
@@ -51,7 +52,7 @@ export default class SessionController {
 
     await auth.use('web').login(user)
     session.flash('success', `Welcome, ${user.fullName ?? user.email}`)
-    response.redirect().toRoute('dashboard')
+    redirectAfterLogin(response, session)
   }
 
   async destroy({ auth, response }: HttpContext) {

@@ -1,9 +1,6 @@
-import { DateTime } from 'luxon'
 import Event from '#models/event'
 import Guest from '#models/guest'
-import mailerFactory from '#services/mailer_factory'
 import invitationService from '#services/invitation_service'
-import InvitationNotification from '#mails/invitation_notification'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class InvitationsController {
@@ -23,7 +20,7 @@ export default class InvitationsController {
       return response.redirect().toRoute('events.show', { id: event.id })
     }
 
-    const ok = await this.sendTo(user.id, event, guest)
+    const ok = await invitationService.sendEmailInvitation(event, guest)
     if (ok) {
       session.flash('success', `Invitation emailed to ${guest.email}.`)
     } else {
@@ -47,35 +44,13 @@ export default class InvitationsController {
 
     let sent = 0
     for (const guest of event.guests) {
-      if (await this.sendTo(user.id, event, guest)) {
+      if (await invitationService.sendEmailInvitation(event, guest)) {
         sent += 1
       }
     }
 
     session.flash('success', `Sent ${sent} invitation${sent === 1 ? '' : 's'}.`)
     return response.redirect().toRoute('events.show', { id: event.id })
-  }
-
-  /**
-   * Builds (or reuses) the email invitation, sends it via the user's configured
-   * mailer, and records the delivery status.
-   */
-  private async sendTo(userId: number, event: Event, guest: Guest) {
-    const invitation = await invitationService.forGuest(guest, 'email')
-    const url = invitationService.inviteUrl(invitation.token)
-
-    try {
-      const { mailer, from } = await mailerFactory.forUser(userId)
-      await new InvitationNotification(guest, event, url, from).send(mailer)
-      invitation.status = 'sent'
-      invitation.sentAt = DateTime.now()
-      await invitation.save()
-      return true
-    } catch {
-      invitation.status = 'failed'
-      await invitation.save()
-      return false
-    }
   }
 
   private async findOwned(userId: number, eventId: number | string, guestId: number | string) {

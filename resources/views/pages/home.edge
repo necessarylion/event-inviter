@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>Guest Invite — QR invitations & fast guest check-in</title>
+@component('layouts/public', {
+  title: 'Guest Invite — QR invitations & fast guest check-in',
+  isAuthenticated,
+})
+  @slot('head')
     <meta
       name="description"
       content="Create events, build your guest list, and invite people by email, shareable link, or printable card. Every invitation carries a unique QR code for instant check-in at the door."
@@ -56,14 +54,6 @@
 
 
     </script>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-    />
-    <link rel="stylesheet" href="https://unpkg.com/primeicons@7.0.0/primeicons.css" />
 
     <style>
       /* =========================================================
@@ -216,65 +206,6 @@
         padding: 9px 16px;
         font-size: 14px;
         border-radius: 10px;
-      }
-
-      /* ---------- nav ---------- */
-      .nav {
-        position: sticky;
-        top: 0;
-        z-index: 60;
-        background: color-mix(in srgb, var(--bg), transparent 18%);
-        backdrop-filter: saturate(140%) blur(12px);
-        border-bottom: 1px solid transparent;
-        transition:
-          border-color 0.25s,
-          background 0.25s;
-      }
-      .nav.scrolled {
-        border-bottom-color: var(--line);
-      }
-      .nav .inner {
-        max-width: var(--maxw);
-        margin: 0 auto;
-        padding: 16px 28px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        font-weight: 800;
-        font-size: 19px;
-        letter-spacing: -0.02em;
-        color: var(--ink);
-        text-decoration: none;
-      }
-      .brand .mark {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        background: var(--accent-500);
-        color: var(--accent-contrast);
-        font-size: 17px;
-        box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accent-500), transparent 40%);
-      }
-      .nav .spacer {
-        flex: 1;
-      }
-      .nav .navlink {
-        color: var(--ink-2);
-        font-size: 15px;
-        font-weight: 500;
-        text-decoration: none;
-        padding: 8px 10px;
-        border-radius: 8px;
-      }
-      .nav .navlink:hover {
-        color: var(--ink);
       }
 
       /* ---------- hero ---------- */
@@ -1254,38 +1185,6 @@
         color: var(--accent-700);
       }
 
-      /* ---------- footer ---------- */
-      footer.foot {
-        padding: 44px 0;
-        border-top: 1px solid var(--line);
-      }
-      footer.foot .inner {
-        max-width: var(--maxw);
-        margin: 0 auto;
-        padding: 0 28px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        flex-wrap: wrap;
-      }
-      footer.foot .copy {
-        font-size: 14px;
-        color: var(--ink-3);
-      }
-      footer.foot .flinks {
-        display: flex;
-        gap: 22px;
-      }
-      footer.foot .flinks a {
-        font-size: 14px;
-        color: var(--ink-2);
-        text-decoration: none;
-      }
-      footer.foot .flinks a:hover {
-        color: var(--ink);
-      }
-
       /* ---------- scroll reveal ---------- */
       .reveal {
         opacity: 0;
@@ -1357,9 +1256,6 @@
           grid-template-columns: 1fr;
           gap: 30px;
         }
-        .nav .navlink.hide-sm {
-          display: none;
-        }
       }
       @media (max-width: 540px) {
         .steps {
@@ -1373,27 +1269,12 @@
         }
       }
     </style>
-    {{--
-      Shared brand tokens (same file the app uses) — loaded last so it
-      drives the brand colour & fonts above. Edit inertia/css/brand_tokens.css
-      to re-theme the marketing site and the app together.
-    --}}
-    @vite(['inertia/css/brand_tokens.css'])
-  </head>
-  <body>
-    <nav class="nav" id="nav">
-      <div class="inner">
-        <a class="brand" href="#top">
-          <span class="mark"><i class="pi pi-ticket"></i></span>
-          Guest Invite
-        </a>
-        <a class="navlink hide-sm" href="#how">How it works</a>
-        <a class="navlink hide-sm" href="#invite">Invitations</a>
-        <div class="spacer"></div>
-        <a class="navlink" href="/login">Login</a>
-        <a class="btn btn-primary btn-sm" href="/signup">Get started</a>
-      </div>
-    </nav>
+  @endslot
+
+  @slot('headerNav')
+    <a class="site-header__link is-optional" href="#how">How it works</a>
+    <a class="site-header__link is-optional" href="#invite">Invitations</a>
+  @endslot
 
     <header class="hero" id="top">
       <div class="glow"></div>
@@ -1745,15 +1626,6 @@
       </div>
     </section>
 
-    <footer class="foot">
-      <div class="inner">
-        <div class="copy">© Guest Invite — QR invitations &amp; guest check-in</div>
-        <div class="flinks">
-          <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Support</a>
-        </div>
-      </div>
-    </footer>
-
     <script>
       (function () {
         'use strict';
@@ -1973,14 +1845,6 @@
           });
         });
 
-        /* ---- sticky nav border on scroll ---- */
-        var nav = document.getElementById('nav');
-        var onScroll = function () {
-          nav.classList.toggle('scrolled', window.scrollY > 8);
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
-
         /* ---- scroll reveal ---- */
         var reveals = document.querySelectorAll('.reveal');
         if (reduce || !('IntersectionObserver' in window)) {
@@ -2005,5 +1869,4 @@
         }
       })();
     </script>
-  </body>
-</html>
+@endcomponent

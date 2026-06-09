@@ -8,19 +8,21 @@ const form = useForm({
   title: '',
   description: '',
   location: '',
+  mapUrl: '',
   startsAt: '',
   endsAt: '',
   allowPublicRsvp: true,
+  thumbnail: null as File | null,
 })
 
 function submit() {
   form
-    .transform((data) => ({
-      ...data,
-      description: data.description || null,
-      location: data.location || null,
-      endsAt: data.endsAt || null,
-    }))
+    .transform((data) => {
+      // Empty optional fields are normalised to null server-side; drop the
+      // thumbnail key when no file is picked so the request stays JSON.
+      const { thumbnail, ...rest } = data
+      return thumbnail ? data : rest
+    })
     .post('/events')
 }
 </script>

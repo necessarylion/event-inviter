@@ -54,6 +54,24 @@ const routes = {
     tokens: [{"old":"/r/:token","type":0,"val":"r","end":""},{"old":"/r/:token","type":1,"val":"token","end":""}],
     types: placeholder as Registry['registrations.register']['types'],
   },
+  'public_events.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/events',
+    tokens: [{"old":"/events","type":0,"val":"events","end":""}],
+    types: placeholder as Registry['public_events.index']['types'],
+  },
+  'public_events.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/e/:slug',
+    tokens: [{"old":"/e/:slug","type":0,"val":"e","end":""},{"old":"/e/:slug","type":1,"val":"slug","end":""}],
+    types: placeholder as Registry['public_events.show']['types'],
+  },
+  'public_events.join': {
+    methods: ["POST"],
+    pattern: '/e/:slug/join',
+    tokens: [{"old":"/e/:slug/join","type":0,"val":"e","end":""},{"old":"/e/:slug/join","type":1,"val":"slug","end":""},{"old":"/e/:slug/join","type":0,"val":"join","end":""}],
+    types: placeholder as Registry['public_events.join']['types'],
+  },
   'new_account.create': {
     methods: ["GET","HEAD"],
     pattern: '/signup',

@@ -1,0 +1,151 @@
+{{--
+  Shared site header — used by the marketing home, the public events listing,
+  and the public event detail page so all three share one nav and content width.
+
+  Props:
+    • isAuthenticated (bool) — Dashboard when signed in, otherwise Login + Sign up.
+  Default slot:
+    • Extra left-side nav links (e.g. the home page's section anchors). Mark
+      links with `is-optional` to hide them on narrow screens.
+
+  Styled against the shared brand tokens (--accent-*) plus the per-page surface
+  tokens (--ink, --ink-2, --line, --bg) every page defines, so it renders the
+  same everywhere. Width (1180px / 28px gutters) matches each page's content.
+--}}
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    background: color-mix(in srgb, var(--bg), transparent 18%);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .site-header__inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 15px 28px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .site-header__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+    margin-right: 14px;
+  }
+  .site-header__mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--accent-500);
+    color: var(--accent-contrast);
+    font-size: 17px;
+    box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accent-500), transparent 40%);
+  }
+  .site-header__nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .site-header__spacer {
+    flex: 1;
+  }
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .site-header__link {
+    color: var(--ink-2);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    transition:
+      color 0.2s,
+      background 0.2s;
+  }
+  .site-header__link:hover {
+    color: var(--ink);
+  }
+  .site-header__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      transform 0.15s ease,
+      background 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+  }
+  .site-header__btn:active {
+    transform: translateY(1px);
+  }
+  .site-header__btn--primary {
+    background: var(--accent-500);
+    color: var(--accent-contrast);
+    border-color: var(--accent-500);
+    box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent-500), transparent 45%);
+  }
+  .site-header__btn--primary:hover {
+    background: var(--accent-600);
+    border-color: var(--accent-600);
+    color: var(--accent-contrast);
+  }
+  @media (max-width: 640px) {
+    .site-header__inner {
+      padding: 12px 18px;
+    }
+    .site-header__nav .is-optional {
+      display: none;
+    }
+    .site-header__brand {
+      font-size: 17px;
+    }
+  }
+</style>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="site-header__brand" href="/">
+      <span class="site-header__mark"><i class="pi pi-ticket"></i></span>
+      Guest Invite
+    </a>
+    <nav class="site-header__nav">
+      @if($slots.main)
+        {{{ await $slots.main() }}}
+      @end
+      <a class="site-header__link" href="/events">Events</a>
+    </nav>
+    <div class="site-header__spacer"></div>
+    <div class="site-header__actions">
+      @if(isAuthenticated)
+        <a class="site-header__btn site-header__btn--primary" href="/dashboard">Dashboard</a>
+      @else
+        <a class="site-header__link" href="/login">Login</a>
+        <a class="site-header__btn site-header__btn--primary" href="/signup">Sign up</a>
+      @end
+    </div>
+  </div>
+</header>

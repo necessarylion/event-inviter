@@ -12,6 +12,9 @@ export type ScannedRoutes = {
     'invite.rsvp': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'registrations.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'registrations.register': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
+    'public_events.index': { paramsTuple?: []; params?: {} }
+    'public_events.show': { paramsTuple: [ParamValue]; params: {'slug': ParamValue} }
+    'public_events.join': { paramsTuple: [ParamValue]; params: {'slug': ParamValue} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'new_account.store': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
@@ -62,6 +65,8 @@ export type ScannedRoutes = {
     'invite.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'invite.card': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'registrations.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
+    'public_events.index': { paramsTuple?: []; params?: {} }
+    'public_events.show': { paramsTuple: [ParamValue]; params: {'slug': ParamValue} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'dashboard': { paramsTuple?: []; params?: {} }
@@ -84,6 +89,8 @@ export type ScannedRoutes = {
     'invite.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'invite.card': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'registrations.show': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
+    'public_events.index': { paramsTuple?: []; params?: {} }
+    'public_events.show': { paramsTuple: [ParamValue]; params: {'slug': ParamValue} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'dashboard': { paramsTuple?: []; params?: {} }
@@ -102,6 +109,7 @@ export type ScannedRoutes = {
   POST: {
     'invite.rsvp': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'registrations.register': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
+    'public_events.join': { paramsTuple: [ParamValue]; params: {'slug': ParamValue} }
     'new_account.store': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'session.google': { paramsTuple?: []; params?: {} }

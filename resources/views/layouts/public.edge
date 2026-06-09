@@ -1,0 +1,112 @@
+{{--
+  Public layout — the shared document skeleton for the marketing home and the
+  public event pages. Owns the <head> essentials (fonts, brand tokens, base
+  styles + shared content width), the shared header, and the shared footer, so
+  the three pages stay visually consistent. White theme only.
+
+  Props:
+    • title (string)         — <title> text
+    • isAuthenticated (bool) — header auth state (Dashboard vs Login/Sign up)
+
+  Slots:
+    • head      — page-specific <meta>/<link> and the page's own <style>
+    • headerNav — extra left-side header links (optional)
+    • (default) — page body
+--}}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/primeicons@7.0.0/primeicons.css" />
+
+    <style>
+      /* Shared palette + surface tokens (white theme). Brand colour & fonts
+         come from brand_tokens.css, loaded last. */
+      :root {
+        --p-slate-0: #ffffff;
+        --p-slate-50: #f8fafc;
+        --p-slate-100: #f1f5f9;
+        --p-slate-200: #e2e8f0;
+        --p-slate-300: #cbd5e1;
+        --p-slate-400: #94a3b8;
+        --p-slate-500: #64748b;
+        --p-slate-600: #475569;
+        --p-slate-700: #334155;
+        --p-slate-800: #1e293b;
+        --p-slate-900: #0f172a;
+        --p-slate-950: #020617;
+
+        --ink: var(--p-slate-900);
+        --ink-2: var(--p-slate-600);
+        --ink-3: var(--p-slate-500);
+        --line: var(--p-slate-200);
+        --bg: #ffffff;
+        --bg-2: var(--p-slate-50);
+
+        --radius: 14px;
+        --radius-lg: 22px;
+        --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.5;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* Shared content width — every page aligns to this. */
+      .container {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 28px;
+      }
+    </style>
+
+    @if($slots.head)
+      {{{ await $slots.head() }}}
+    @end
+
+    {{--
+      Shared brand tokens (same file the app uses) — loaded last so it drives
+      the brand colour & fonts. Edit inertia/css/brand_tokens.css to re-theme
+      the marketing site and the app together.
+    --}}
+    @vite(['inertia/css/brand_tokens.css'])
+  </head>
+  <body>
+    @component('components/site_header', { isAuthenticated })
+      @if($slots.headerNav)
+        {{{ await $slots.headerNav() }}}
+      @end
+    @end
+
+    {{{ await $slots.main() }}}
+
+    @include('components/site_footer')
+  </body>
+</html>

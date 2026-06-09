@@ -1,0 +1,396 @@
+@component('layouts/public', {
+  title: `${event.title} — Join the event`,
+  isAuthenticated,
+})
+  @slot('head')
+    <meta
+      name="description"
+      content="Join {{ event.title }}. Reserve your spot in a few seconds and get a QR code for check-in."
+    />
+    <link rel="canonical" href="{{ publicUrl }}" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{ event.title }}" />
+    <meta
+      property="og:description"
+      content="{{ event.when ? event.when.start : 'Reserve your spot to attend.' }}"
+    />
+    <meta property="og:url" content="{{ publicUrl }}" />
+    @if(event.thumbnailUrl)
+      <meta property="og:image" content="{{ event.thumbnailUrl }}" />
+    @end
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <style>
+      :root {
+        --flash-error-bg: #fef2f2;
+        --flash-error-fg: #b91c1c;
+        --flash-error-line: #fecaca;
+      }
+
+      .page {
+        position: relative;
+      }
+      .page::before {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+        width: 760px;
+        height: 760px;
+        top: -360px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: radial-gradient(
+          closest-side,
+          color-mix(in srgb, var(--accent-500), transparent 82%),
+          transparent 72%
+        );
+      }
+
+      .shell {
+        position: relative;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 28px 56px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        gap: 48px;
+        align-items: start;
+      }
+      .media {
+        position: sticky;
+        top: 24px;
+        min-width: 0;
+      }
+      .info {
+        min-width: 0;
+        padding-top: 4px;
+      }
+
+      .cover {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        border-radius: var(--radius-lg);
+        background-size: cover;
+        background-position: center;
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-card);
+      }
+      .cover-fallback {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        border-radius: var(--radius-lg);
+        display: grid;
+        place-items: center;
+        background: linear-gradient(150deg, var(--accent-600), var(--accent-500));
+        box-shadow: var(--shadow-card);
+      }
+      .cover-fallback .mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+        font-size: 30px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-700);
+        background: var(--accent-50);
+        border: 1px solid color-mix(in srgb, var(--accent-500), transparent 78%);
+        padding: 6px 13px;
+        border-radius: 999px;
+      }
+      .eyebrow .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent-500);
+      }
+
+      .info h1 {
+        font-size: 38px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.08;
+        margin: 16px 0 20px;
+        color: var(--ink);
+        text-wrap: balance;
+      }
+
+      .meta {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .meta-row {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        color: var(--ink-2);
+        font-size: 15px;
+      }
+      .meta-row a {
+        color: var(--accent-700);
+      }
+      .meta-row a:hover {
+        text-decoration: underline;
+      }
+      .meta-row .mi {
+        width: 34px;
+        height: 34px;
+        flex: none;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-50);
+        color: var(--accent-600);
+        font-size: 15px;
+      }
+      .meta-row .mt {
+        line-height: 1.45;
+      }
+      .meta-row .mt .line2 {
+        display: block;
+      }
+      .meta-row .map-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .meta-row .map-link i {
+        font-size: 12px;
+      }
+
+      /* Attending count — total confirmed RSVPs. */
+      .attendees {
+        display: inline-flex;
+        align-items: center;
+        gap: 11px;
+        margin-top: 22px;
+        color: var(--ink-2);
+        font-size: 15px;
+      }
+      .attendees .ai {
+        width: 34px;
+        height: 34px;
+        flex: none;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-50);
+        color: var(--accent-600);
+        font-size: 15px;
+      }
+      .attendees strong {
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .desc {
+        color: var(--ink-2);
+        font-size: 15px;
+        line-height: 1.6;
+        margin-top: 22px;
+        text-wrap: pretty;
+        white-space: pre-line;
+      }
+
+      /* ---- join ---- */
+      .join {
+        margin-top: 28px;
+        max-width: 420px;
+      }
+      .join-note {
+        color: var(--ink-3);
+        font-size: 13px;
+        margin-top: 12px;
+        text-align: center;
+      }
+
+      .flash {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 12px 15px;
+        border-radius: var(--radius);
+        margin-bottom: 16px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .flash i {
+        font-size: 15px;
+      }
+      .flash-error {
+        background: var(--flash-error-bg);
+        color: var(--flash-error-fg);
+        border: 1px solid var(--flash-error-line);
+      }
+
+      .btn {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          background 0.2s,
+          border-color 0.2s;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: var(--accent-500);
+        color: var(--accent-contrast);
+        border-color: var(--accent-500);
+        box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent-500), transparent 45%);
+      }
+      .btn-primary:hover {
+        background: var(--accent-600);
+        border-color: var(--accent-600);
+      }
+      .btn-joined {
+        background: var(--accent-50);
+        color: var(--accent-700);
+        border-color: color-mix(in srgb, var(--accent-500), transparent 70%);
+      }
+      .btn-joined:hover {
+        background: color-mix(in srgb, var(--accent-500), transparent 86%);
+      }
+
+      @media (max-width: 880px) {
+        .layout {
+          grid-template-columns: 1fr;
+          gap: 28px;
+        }
+        .media {
+          position: static;
+        }
+        .join {
+          max-width: none;
+        }
+      }
+      @media (max-width: 540px) {
+        .shell {
+          padding: 20px 16px 36px;
+        }
+        .info h1 {
+          font-size: 28px;
+        }
+      }
+    </style>
+  @endslot
+
+  <div class="page">
+    <div class="shell">
+      <div class="layout">
+        <div class="media">
+          @if(event.thumbnailUrl)
+            <div class="cover" style="background-image: url('{{ event.thumbnailUrl }}')"></div>
+          @else
+            <div class="cover-fallback">
+              <span class="mark"><i class="pi pi-ticket"></i></span>
+            </div>
+          @end
+        </div>
+
+        <div class="info">
+          @if(invited)
+            <span class="eyebrow"><span class="dot"></span> You're invited</span>
+          @end
+          <h1>{{ event.title }}</h1>
+
+          <div class="meta">
+            @if(event.when)
+              <div class="meta-row">
+                <span class="mi"><i class="pi pi-calendar"></i></span>
+                <span class="mt">
+                  {{ event.when.start }}
+                  @if(event.when.end)
+                    <span class="line2">{{ event.when.end }}</span>
+                  @end
+                </span>
+              </div>
+            @end
+            @if(event.location)
+              <div class="meta-row">
+                <span class="mi"><i class="pi pi-map-marker"></i></span>
+                <span class="mt">
+                  {{ event.location }}
+                  @if(event.mapUrl)
+                    <a class="map-link" href="{{ event.mapUrl }}" target="_blank" rel="noopener noreferrer">
+                      <i class="pi pi-directions"></i> Open in map
+                    </a>
+                  @end
+                </span>
+              </div>
+            @end
+          </div>
+
+          <div class="attendees">
+            <span class="ai"><i class="pi pi-users"></i></span>
+            <span><strong>{{ attendingCount }}</strong> {{ attendingCount === 1 ? 'guest' : 'guests' }} going</span>
+          </div>
+
+          @if(event.description)
+            <p class="desc">{{ event.description }}</p>
+          @end
+
+          <div class="join">
+            @if(flashMessages.has('error'))
+              <div class="flash flash-error">
+                <i class="pi pi-exclamation-circle"></i>
+                {{ flashMessages.get('error') }}
+              </div>
+            @end
+
+            @if(inviteToken)
+              <a class="btn btn-joined" href="/i/{{ inviteToken }}">
+                <i class="pi pi-check-circle"></i>
+                You're going — view your invite
+              </a>
+            @else
+              <form method="POST" action="/e/{{ slug }}/join">
+                @if(csrfField)
+                  {{ csrfField() }}
+                @end
+                <button type="submit" class="btn btn-primary">
+                  <i class="pi pi-check"></i>
+                  Join event
+                </button>
+              </form>
+              @if(isLoggedIn)
+                <p class="join-note">One click to reserve your spot — we'll email your invite with a QR code.</p>
+              @else
+                <p class="join-note">You'll be asked to sign in, then brought right back here.</p>
+              @end
+            @end
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+@endcomponent

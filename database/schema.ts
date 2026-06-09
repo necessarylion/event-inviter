@@ -80,9 +80,12 @@ export class EventSchema extends BaseModel {
     'description',
     'endsAt',
     'id',
+    'isPublic',
     'location',
+    'mapUrl',
     'slug',
     'startsAt',
+    'thumbnailUrl',
     'title',
     'updatedAt',
     'userId',
@@ -99,11 +102,17 @@ export class EventSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
+  declare isPublic: boolean
+  @column()
   declare location: string | null
+  @column()
+  declare mapUrl: string | null
   @column()
   declare slug: string
   @column.dateTime()
   declare startsAt: DateTime
+  @column()
+  declare thumbnailUrl: string | null
   @column()
   declare title: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })

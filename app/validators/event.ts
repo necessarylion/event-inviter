@@ -16,24 +16,52 @@ const dateFormats = [
 ]
 
 /**
+ * Multipart form submissions (used when a thumbnail is attached) send empty
+ * optional fields as empty strings rather than `null`. Normalise those back to
+ * `null` before validation so date/string rules treat them as absent.
+ */
+const emptyToNull = (value: unknown) => (value === '' || value === undefined ? null : value)
+
+/** Accepted thumbnail image: jpg/png/webp/gif up to 5MB. */
+const thumbnailRule = vine
+  .file({ size: '5mb', extnames: ['jpg', 'jpeg', 'png', 'webp', 'gif'] })
+  .nullable()
+  .optional()
+
+/**
  * Shared event fields.
  */
 const eventFields = {
   title: vine.string().trim().minLength(2).maxLength(150),
-  description: vine.string().trim().maxLength(5000).nullable().optional(),
-  location: vine.string().trim().maxLength(200).nullable().optional(),
+  description: vine.string().trim().maxLength(5000).parse(emptyToNull).nullable().optional(),
+  location: vine.string().trim().maxLength(200).parse(emptyToNull).nullable().optional(),
   startsAt: vine.date({ formats: dateFormats }),
-  endsAt: vine.date({ formats: dateFormats }).nullable().optional(),
+  endsAt: vine.date({ formats: dateFormats }).parse(emptyToNull).nullable().optional(),
   allowPublicRsvp: vine.boolean().optional(),
+  thumbnail: thumbnailRule,
+  mapUrl: vine
+    .string()
+    .trim()
+    .url()
+    .startsWith('https://maps.app.goo.gl')
+    .maxLength(2048)
+    .parse(emptyToNull)
+    .nullable()
+    .optional(),
 }
 
 export const createEventValidator = vine.create({ ...eventFields })
-export const updateEventValidator = vine.create({ ...eventFields })
+export const updateEventValidator = vine.create({
+  ...eventFields,
+  /** When true, the existing thumbnail is removed (no new file uploaded). */
+  removeThumbnail: vine.boolean().optional(),
+})
 
 /**
- * Per-event settings (the event settings page) — currently just the public
- * RSVP toggle.
+ * Per-event settings (the event settings page): the public-RSVP toggle and the
+ * "list this event publicly" toggle.
  */
 export const eventSettingsValidator = vine.create({
   allowPublicRsvp: vine.boolean(),
+  isPublic: vine.boolean().optional(),
 })

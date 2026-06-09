@@ -6,6 +6,7 @@ import CardTemplate from '#models/card_template'
 import qrService from '#services/qr_service'
 import cardRenderService from '#services/card_render_service'
 import invitationService from '#services/invitation_service'
+import { formatEventWhen, resolveMapUrl } from '#services/event_presenter_service'
 import { rsvpValidator } from '#validators/guest'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -48,8 +49,9 @@ export default class InviteController {
         title: event.title,
         description: event.description,
         location: event.location,
+        mapUrl: resolveMapUrl(event.location, event.mapUrl),
         allowPublicRsvp: event.allowPublicRsvp,
-        when: this.formatWhen(event.startsAt, event.endsAt),
+        when: formatEventWhen(event.startsAt, event.endsAt),
       },
     })
   }
@@ -114,27 +116,6 @@ export default class InviteController {
         : 'Your response was recorded.'
     )
     return response.redirect().back()
-  }
-
-  /**
-   * Human-readable date/time for the invitation, split into a primary line and
-   * an optional second line. When start and end fall on the same calendar day
-   * the time range stays on one line; when they span different days the full end
-   * date/time is returned as a separate line so the view can wrap it cleanly.
-   */
-  private formatWhen(startsAt: DateTime | null, endsAt: DateTime | null) {
-    if (!startsAt) return null
-
-    const start = startsAt.setZone('UTC')
-    const dateTimeFmt = 'cccc, dd LLLL yyyy • t'
-
-    if (!endsAt) return { start: start.toFormat(dateTimeFmt), end: null }
-
-    const end = endsAt.setZone('UTC')
-    if (start.hasSame(end, 'day')) {
-      return { start: `${start.toFormat(dateTimeFmt)} – ${end.toFormat('t')}`, end: null }
-    }
-    return { start: `${start.toFormat(dateTimeFmt)} —`, end: end.toFormat(dateTimeFmt) }
   }
 
   private loadInvitation(token: string) {

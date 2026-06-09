@@ -15,7 +15,13 @@ import {
 } from '~/components/ui'
 import { confirm } from '~/composables/use_confirm'
 
-type EventData = { id: number; title: string; allowPublicRsvp: boolean }
+type EventData = {
+  id: number
+  title: string
+  slug: string
+  allowPublicRsvp: boolean
+  isPublic: boolean
+}
 type RegistrationLink = {
   url: string
   isActive: boolean
@@ -30,17 +36,24 @@ function toLocalInput(iso: string | null) {
   return iso ? DateTime.fromISO(iso).setZone('UTC').toFormat("yyyy-MM-dd'T'HH:mm") : ''
 }
 
-// ----- public RSVP -----
+// ----- public RSVP + public listing -----
 const allowPublicRsvp = ref(props.event.allowPublicRsvp)
+const isPublic = ref(props.event.isPublic)
 watch(
   () => props.event.allowPublicRsvp,
   (value) => (allowPublicRsvp.value = value)
 )
+watch(
+  () => props.event.isPublic,
+  (value) => (isPublic.value = value)
+)
 
-function saveRsvp() {
+const publicUrl = computed(() => `/e/${props.event.slug}`)
+
+function saveSettings() {
   router.put(
     `/events/${props.event.id}/settings`,
-    { allowPublicRsvp: allowPublicRsvp.value },
+    { allowPublicRsvp: allowPublicRsvp.value, isPublic: isPublic.value },
     { preserveScroll: true }
   )
 }
@@ -132,6 +145,36 @@ function copyRegLink() {
 
     <UiPageHeader title="Event settings" :subtitle="event.title" />
 
+    <!-- public event listing -->
+    <UiCard class="mb-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h2 class="flex items-center gap-2 text-base font-bold text-ink">
+            <i class="pi pi-globe text-accent-600" /> Public event
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            List this event publicly so anyone can discover it on the events page and join — each
+            person who joins gets an invitation emailed to them.
+          </p>
+        </div>
+        <UiSwitch
+          v-model="isPublic"
+          on-label="On"
+          off-label="Off"
+          @update:model-value="saveSettings"
+        />
+      </div>
+      <a
+        v-if="isPublic"
+        :href="publicUrl"
+        target="_blank"
+        rel="noopener"
+        class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-accent-700 no-underline hover:underline"
+      >
+        <i class="pi pi-external-link" /> View public page
+      </a>
+    </UiCard>
+
     <!-- public RSVP -->
     <UiCard class="mb-6">
       <div class="flex flex-wrap items-start justify-between gap-3">
@@ -147,7 +190,7 @@ function copyRegLink() {
           v-model="allowPublicRsvp"
           on-label="On"
           off-label="Off"
-          @update:model-value="saveRsvp"
+          @update:model-value="saveSettings"
         />
       </div>
     </UiCard>

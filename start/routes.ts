@@ -31,6 +31,14 @@ router.post('/i/:token/rsvp', [controllers.Invite, 'rsvp']).as('invite.rsvp')
 router.get('/r/:token', [controllers.Registrations, 'show']).as('registrations.show')
 router.post('/r/:token', [controllers.Registrations, 'register']).as('registrations.register')
 
+/**
+ * Public events: discoverable listing + per-event detail/join. Joining an event
+ * marked `isPublic` registers the visitor (logged in or not) as a guest.
+ */
+router.get('/events', [controllers.PublicEvents, 'index']).as('public_events.index')
+router.get('/e/:slug', [controllers.PublicEvents, 'show']).as('public_events.show')
+router.post('/e/:slug/join', [controllers.PublicEvents, 'join']).as('public_events.join')
+
 /*
 |--------------------------------------------------------------------------
 | Guest-only auth pages

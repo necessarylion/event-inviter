@@ -3,6 +3,8 @@ import { randomBytes } from 'node:crypto'
 import string from '@adonisjs/core/helpers/string'
 import invitationService from '#services/invitation_service'
 import registrationLinkService from '#services/registration_link_service'
+import eventThumbnailService from '#services/event_thumbnail_service'
+import { resolveMapUrl } from '#services/event_presenter_service'
 import type { HttpContext } from '@adonisjs/core/http'
 import {
   createEventValidator,
@@ -16,12 +18,13 @@ export default class EventsController {
   }
 
   async store({ request, response, auth, session }: HttpContext) {
-    const payload = await request.validateUsing(createEventValidator)
+    const { thumbnail, ...payload } = await request.validateUsing(createEventValidator)
 
     const event = await Event.create({
       ...payload,
       userId: auth.user!.id,
       slug: await this.uniqueSlug(payload.title),
+      thumbnailUrl: thumbnail ? await eventThumbnailService.store(thumbnail) : null,
     })
 
     session.flash('success', 'Event created.')
@@ -62,7 +65,9 @@ export default class EventsController {
         id: event.id,
         title: event.title,
         location: event.location,
+        mapUrl: resolveMapUrl(event.location, event.mapUrl),
         startsAt: event.startsAt?.toISO() ?? null,
+        thumbnailUrl: event.thumbnailUrl,
       },
       guests,
       stats: {
@@ -86,9 +91,11 @@ export default class EventsController {
         title: event.title,
         description: event.description,
         location: event.location,
+        mapUrl: event.mapUrl,
         startsAt: event.startsAt?.toISO() ?? null,
         endsAt: event.endsAt?.toISO() ?? null,
         allowPublicRsvp: event.allowPublicRsvp,
+        thumbnailUrl: event.thumbnailUrl,
       },
     })
   }
@@ -99,8 +106,18 @@ export default class EventsController {
       return response.notFound('Event not found')
     }
 
-    const payload = await request.validateUsing(updateEventValidator)
+    const { thumbnail, removeThumbnail, ...payload } =
+      await request.validateUsing(updateEventValidator)
     event.merge(payload)
+
+    if (thumbnail) {
+      await eventThumbnailService.delete(event.thumbnailUrl)
+      event.thumbnailUrl = await eventThumbnailService.store(thumbnail)
+    } else if (removeThumbnail) {
+      await eventThumbnailService.delete(event.thumbnailUrl)
+      event.thumbnailUrl = null
+    }
+
     await event.save()
 
     session.flash('success', 'Event updated.')
@@ -124,7 +141,9 @@ export default class EventsController {
       event: {
         id: event.id,
         title: event.title,
+        slug: event.slug,
         allowPublicRsvp: event.allowPublicRsvp,
+        isPublic: event.isPublic,
       },
       registrationLink: link
         ? {
@@ -158,6 +177,7 @@ export default class EventsController {
       return response.notFound('Event not found')
     }
 
+    await eventThumbnailService.delete(event.thumbnailUrl)
     await event.delete()
     session.flash('success', 'Event deleted.')
     return response.redirect().toRoute('dashboard')

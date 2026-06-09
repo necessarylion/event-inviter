@@ -1,3 +1,9 @@
 - user pay on event join with invite link
 - invite all user by email
 - test invite email / check template
+- Paid event feature (must mark as public event)
+  - event can be set as paid event, where event organizer can enter the price and currency of event
+  - and when user wanted to join, they need to pay for it
+  - our sytem need to setup stripe payment (with prompt pay and credit card)
+  - 10% commission will be deduct from the event organizer (inclduing stripe fees)
+  - 7% tax will be deducted from the event organizer when they withdraw the money

@@ -44,11 +44,8 @@ function isActive(prefix: string) {
       class="sticky top-0 z-50 border-b border-line bg-[color-mix(in_srgb,var(--bg),transparent_12%)] backdrop-blur-md backdrop-saturate-150"
     >
       <div class="mx-auto flex max-w-[1180px] items-center gap-2 px-7 py-3.5">
-        <!-- Logged-in → Inertia dashboard; logged-out → Edge home (plain <a>). -->
-        <Link v-if="page.props.user" route="dashboard" class="mr-4 no-underline">
-          <BrandMark :size="32" />
-        </Link>
-        <a v-else href="/" class="mr-4 no-underline">
+        <!-- Brand always links to the public Edge home page (plain <a>). -->
+        <a href="/" class="mr-4 no-underline">
           <BrandMark :size="32" />
         </a>
 

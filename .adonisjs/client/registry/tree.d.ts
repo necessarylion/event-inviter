@@ -16,6 +16,11 @@ export interface ApiDefinition {
     show: typeof routes['registrations.show']
     register: typeof routes['registrations.register']
   }
+  publicEvents: {
+    index: typeof routes['public_events.index']
+    show: typeof routes['public_events.show']
+    join: typeof routes['public_events.join']
+  }
   newAccount: {
     create: typeof routes['new_account.create']
     store: typeof routes['new_account.store']

@@ -1,10 +1,9 @@
 import env from '#start/env'
-import Guest from '#models/guest'
 import RegistrationLink from '#models/registration_link'
-import invitationService from '#services/invitation_service'
+import guestRegistrationService from '#services/guest_registration_service'
 import registrationLinkService from '#services/registration_link_service'
+import { formatEventWhen } from '#services/event_presenter_service'
 import { publicRegisterValidator } from '#validators/registration'
-import type { DateTime } from 'luxon'
 import type { HttpContext } from '@adonisjs/core/http'
 
 /**
@@ -39,35 +38,19 @@ export default class RegistrationsController {
       normalizeRegistration(request.only(['name', 'email', 'phone']))
     )
 
-    /**
-     * One registration per email per event — block duplicates rather than
-     * leaking another registrant's personal invite link.
-     */
-    const existing = await Guest.query()
-      .where('eventId', link.eventId)
-      .whereRaw('lower(email) = ?', [payload.email.toLowerCase()])
-      .first()
+    const result = await guestRegistrationService.register(link.eventId, payload)
 
-    if (existing) {
+    if (!result.ok) {
       session.flashAll()
       session.flash('error', 'This email is already registered for this event.')
       return response.redirect().back()
     }
 
-    const guest = await Guest.create({
-      eventId: link.eventId,
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone ?? null,
-      rsvpStatus: 'confirmed',
-    })
-
     /**
-     * Give the registrant their own personal invite (QR code + downloadable
-     * card) and land them on it.
+     * Land the registrant on their own personal invite (QR code + downloadable
+     * card).
      */
-    const invitation = await invitationService.forGuest(guest, 'link')
-    return response.redirect().toRoute('invite.show', { token: invitation.token })
+    return response.redirect().toRoute('invite.show', { token: result.invitation.token })
   }
 
   private viewProps(link: RegistrationLink) {
@@ -82,28 +65,9 @@ export default class RegistrationsController {
         title: event.title,
         description: event.description,
         location: event.location,
-        when: this.formatWhen(event.startsAt, event.endsAt),
+        when: formatEventWhen(event.startsAt, event.endsAt),
       },
     }
-  }
-
-  /**
-   * Human-readable date/time, split into a primary line and an optional second
-   * line — same formatting as the invitation page (see InviteController).
-   */
-  private formatWhen(startsAt: DateTime | null, endsAt: DateTime | null) {
-    if (!startsAt) return null
-
-    const start = startsAt.setZone('UTC')
-    const dateTimeFmt = 'cccc, dd LLLL yyyy • t'
-
-    if (!endsAt) return { start: start.toFormat(dateTimeFmt), end: null }
-
-    const end = endsAt.setZone('UTC')
-    if (start.hasSame(end, 'day')) {
-      return { start: `${start.toFormat(dateTimeFmt)} – ${end.toFormat('t')}`, end: null }
-    }
-    return { start: `${start.toFormat(dateTimeFmt)} —`, end: end.toFormat(dateTimeFmt) }
   }
 
   private loadLink(token: string) {

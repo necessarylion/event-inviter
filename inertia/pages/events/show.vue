@@ -40,7 +40,9 @@ type EventData = {
   id: number
   title: string
   location: string | null
+  mapUrl: string | null
   startsAt: string | null
+  thumbnailUrl: string | null
 }
 type Stats = { total: number; confirmed: number; declined: number; checkedIn: number }
 
@@ -336,20 +338,47 @@ const rsvpVariant = (s: string) =>
     </template>
   </UiPageHeader>
 
-  <p class="-mt-4 mb-7 flex flex-wrap items-center gap-2 text-[15px] text-muted">
-    <i class="pi pi-calendar text-accent-600" /> {{ formatDate(event.startsAt) }}
-    <span v-if="event.location" class="flex items-center gap-2">
-      <span class="text-line">·</span>
-      <i class="pi pi-map-marker text-accent-600" /> {{ event.location }}
-    </span>
-  </p>
+  <!-- event overview: thumbnail beside meta + stats -->
+  <div class="-mt-2 mb-7 flex flex-col gap-5 sm:flex-row sm:items-start">
+    <img
+      v-if="event.thumbnailUrl"
+      :src="event.thumbnailUrl"
+      :alt="`${event.title} thumbnail`"
+      class="aspect-4/3 w-full shrink-0 rounded-card border border-line object-cover sm:w-59"
+    />
 
-  <!-- stats -->
-  <div class="mb-7 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <UiStat :value="stats.total" label="Guests" />
-    <UiStat :value="stats.confirmed" label="Confirmed" accent />
-    <UiStat :value="stats.declined" label="Declined" />
-    <UiStat :value="stats.checkedIn" label="Checked in" accent />
+    <div class="flex flex-1 flex-col gap-5">
+      <div class="flex flex-col gap-1.5 text-[15px] text-muted">
+        <p class="flex items-center gap-2">
+          <i class="pi pi-calendar text-accent-600" /> {{ formatDate(event.startsAt) }}
+        </p>
+        <p
+          v-if="event.location || event.mapUrl"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <span v-if="event.location" class="flex items-center gap-2">
+            <i class="pi pi-map-marker text-accent-600" /> {{ event.location }}
+          </span>
+          <a
+            v-if="event.mapUrl"
+            :href="event.mapUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-1.5 font-medium text-accent-600 no-underline hover:underline"
+          >
+            <span v-if="event.location" class="text-line">·</span>
+            <i class="pi pi-directions" /> Open in map
+          </a>
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <UiStat :value="stats.total" label="Guests" />
+        <UiStat :value="stats.confirmed" label="Confirmed" accent />
+        <UiStat :value="stats.declined" label="Declined" />
+        <UiStat :value="stats.checkedIn" label="Checked in" accent />
+      </div>
+    </div>
   </div>
 
   <!-- add guests modal -->
